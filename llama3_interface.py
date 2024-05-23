@@ -1,7 +1,50 @@
+import subprocess
+import sys 
+import socket 
+import os
+import signal 
+import atexit
+
+def install_packages():
+    try:
+        import requests
+        import tkinter as tk 
+    except ImportError:
+        print("Packages not found, Installing...")
+        subprocess.check_call([sys.executable,"-m","pip3","install","-r","requirements.txt"])
+
+#Install Packages if needed
+install_packages()
+
 import tkinter as tk
 from tkinter import Canvas, Frame, Scrollbar
 import requests
 import json
+
+#Function to check if port 11434 is listening (Model is running)
+def is_port_listening(port):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        return s.connect_ex(('localhost',port)) == 0
+
+# Function to start Ollama Server 
+def start_ollama_server():
+    print("Starting Ollama server...")
+    return subprocess.Popen(["Ollama", "serve"])
+
+#Function to stop Ollama server (when user is done)
+def stop_ollama_server(server_process):
+    print("Stopping Ollama server...")
+    server_process.terminate()
+    server_process.wait()
+
+# Check if port 11434 is listening, if not, start Ollama Server
+ollama_server_process = None 
+if not is_port_listening(11434):
+    ollama_server_process = start_ollama_server()
+
+# Ensure Ollama Server is stopped when program exits 
+if ollama_server_process:
+    atexit.register(stop_ollama_server, ollama_server_process)
 
 class ChatApp:
     def __init__(self, root):
