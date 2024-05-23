@@ -1,48 +1,47 @@
 import subprocess
-import sys 
-import socket 
+import sys
+import socket
 import os
-import signal 
+import signal
 import atexit
-
-def install_packages():
-    try:
-        import requests
-        import tkinter as tk 
-    except ImportError:
-        print("Packages not found, Installing...")
-        subprocess.check_call([sys.executable,"-m","pip3","install","-r","requirements.txt"])
-
-#Install Packages if needed
-install_packages()
-
 import tkinter as tk
 from tkinter import Canvas, Frame, Scrollbar
 import requests
 import json
 
-#Function to check if port 11434 is listening (Model is running)
+# Function to install required packages
+def install_packages():
+    try:
+        import requests
+    except ImportError:
+        print("requests package not found. Installing...")
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
+
+# Call the function to install packages
+install_packages()
+
+# Function to check if port 11434 is listening
 def is_port_listening(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        return s.connect_ex(('localhost',port)) == 0
+        return s.connect_ex(('localhost', port)) == 0
 
-# Function to start Ollama Server 
+# Function to start the Ollama server
 def start_ollama_server():
     print("Starting Ollama server...")
     return subprocess.Popen(["Ollama", "serve"])
 
-#Function to stop Ollama server (when user is done)
+# Function to stop the Ollama server
 def stop_ollama_server(server_process):
     print("Stopping Ollama server...")
     server_process.terminate()
     server_process.wait()
 
-# Check if port 11434 is listening, if not, start Ollama Server
-ollama_server_process = None 
+# Check if port 11434 is listening, if not, start the Ollama server
+ollama_server_process = None
 if not is_port_listening(11434):
     ollama_server_process = start_ollama_server()
 
-# Ensure Ollama Server is stopped when program exits 
+# Ensure the Ollama server is stopped when the program exits
 if ollama_server_process:
     atexit.register(stop_ollama_server, ollama_server_process)
 
@@ -71,7 +70,7 @@ class ChatApp:
         self.chat_canvas.config(yscrollcommand=self.scrollbar.set)
         
         self.message_frame = tk.Frame(self.chat_canvas, bg='#2e2e2e')
-        self.chat_canvas.create_window((0, 0), window=self.message_frame, anchor="nw")
+        self.message_frame_id = self.chat_canvas.create_window((0, 0), window=self.message_frame, anchor="nw")
 
         self.message_frame.bind("<Configure>", self.on_frame_configure)
         self.chat_canvas.bind("<Configure>", self.on_canvas_configure)
@@ -94,7 +93,8 @@ class ChatApp:
         self.chat_canvas.configure(scrollregion=self.chat_canvas.bbox("all"))
 
     def on_canvas_configure(self, event=None):
-        self.chat_canvas.itemconfig(self.message_frame, width=event.width)
+        canvas_width = event.width
+        self.chat_canvas.itemconfig(self.message_frame_id, width=canvas_width)
 
     def on_root_resize(self, event=None):
         self.update_message_wraplength()
@@ -134,6 +134,7 @@ class ChatApp:
         self.chat_canvas.update_idletasks()
         self.chat_canvas.configure(scrollregion=self.chat_canvas.bbox("all"))
         self.chat_canvas.yview_moveto(1.0)
+        return bubble
 
     def send_message(self, event=None):
         user_message = self.entry.get()
@@ -147,10 +148,6 @@ class ChatApp:
             "model": "llama3",
             "messages": [
                 {
-                    "role": "system",
-                    "content":"You are Clippy 2.0, a desktop virtual assistant."
-                },
-                {
                     "role": "user",
                     "content": user_message
                 }
@@ -159,13 +156,37 @@ class ChatApp:
         }
         headers = {'Content-Type': 'application/json'}
 
+        response_bubble = self.add_message("", "Model")
+
         try:
-            response = requests.post("http://localhost:11434/api/chat", data=json.dumps(payload), headers=headers)
-            response_json = response.json()
-            model_response = response_json['message']['content']
-            self.add_message(model_response, "Model")
+            with requests.post("http://localhost:11434/api/chat", data=json.dumps(payload), headers=headers, stream=True) as response:
+                response.raise_for_status()
+                partial_response = ""
+                for line in response.iter_lines():
+                    if line:
+                        decoded_line = line.decode('utf-8')
+                        print(f"Received raw line: {decoded_line}")  # Debug: raw line output
+                        try:
+                            json_response = json.loads(decoded_line)
+                            response_chunk = json_response.get('message', {}).get('content', '')
+                            print(f"Received chunk: {response_chunk}")  # Debug: chunk content
+                            partial_response += response_chunk
+                            for label in response_bubble.winfo_children():
+                                if isinstance(label, tk.Label):
+                                    label.config(text=partial_response)
+                            self.chat_canvas.update_idletasks()
+                            self.chat_canvas.yview_moveto(1.0)
+                            # Update the main window to reflect changes immediately
+                            self.root.update_idletasks()
+                            self.root.update()
+                        except json.JSONDecodeError as e:
+                            print(f"Error decoding JSON: {e}")
+                        except Exception as e:
+                            print(f"Error updating UI: {e}")
+        except requests.exceptions.RequestException as e:
+            self.add_message(f"Error: Unable to contact the model server. {str(e)}", "System")
         except Exception as e:
-            self.add_message("Error: Unable to contact the model server.", "System")
+            self.add_message(f"Error: {str(e)}", "System")
 
 if __name__ == "__main__":
     root = tk.Tk()
