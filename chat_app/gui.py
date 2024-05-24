@@ -1,50 +1,9 @@
-import subprocess
-import sys
-import socket
-import atexit
-import tkinter as tk
-from tkinter import Canvas, Frame, Scrollbar
-import requests
-import json
-import time
+import json, requests, sys, time, tkinter as tk
+from tkinter import Canvas, Frame, Scrollbar, Menu, simpledialog
+from utils import create_tooltip
+from rag_search import rag_search
+from inference import get_response
 
-# Function to install required packages
-def install_packages():
-    try:
-        import requests
-    except ImportError:
-        print("requests package not found. Installing...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
-
-# Call the function to install packages
-install_packages()
-
-# Function to check if a specific port is listening
-def is_port_listening(port):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        return s.connect_ex(('localhost', port)) == 0
-
-# Function to start the Ollama server
-def start_ollama_server():
-    print("Starting Ollama server...")
-    return subprocess.Popen(["Ollama", "serve"])
-
-# Function to stop the Ollama server
-def stop_ollama_server(server_process):
-    print("Stopping Ollama server...")
-    server_process.terminate()
-    server_process.wait()
-
-# Check if port 11434 is listening, if not, start the Ollama server
-ollama_server_process = None
-if not is_port_listening(11434):
-    ollama_server_process = start_ollama_server()
-
-# Ensure the Ollama server is stopped when the program exits
-if ollama_server_process:
-    atexit.register(stop_ollama_server, ollama_server_process)
-
-# Main chat application class
 class ChatApp:
     def __init__(self, root):
         self.root = root
@@ -87,9 +46,13 @@ class ChatApp:
         self.entry.grid(row=0, column=0, sticky="ew")
         self.entry.bind("<Return>", self.send_message)
 
-        # Send button
-        self.send_button = tk.Button(self.entry_frame, text="Send", command=self.send_message, bg='#4d4d4d', fg='black', activebackground='#4d4d4d', activeforeground='black')
-        self.send_button.grid(row=0, column=1, padx=(10, 0))
+        # Create the drop-down send button
+        self.send_menu_button = tk.Menubutton(self.entry_frame, text="Send", bg='#4d4d4d', fg='black', activebackground='#4d4d4d', activeforeground='black')
+        self.send_menu = Menu(self.send_menu_button, tearoff=0)
+        self.send_menu.add_command(label="Send", command=self.set_send_mode)
+        self.send_menu.add_command(label="RAG Search", command=self.show_rag_popup)
+        self.send_menu_button.config(menu=self.send_menu)
+        self.send_menu_button.grid(row=0, column=1, padx=(10, 0))
 
         # Stop button to stop the processing of a response
         self.stop_button = tk.Button(self.entry_frame, text="Stop", command=self.stop_processing, bg='#4d4d4d', fg='black', activebackground='#4d4d4d', activeforeground='black')
@@ -106,6 +69,23 @@ class ChatApp:
 
         # Bind mouse wheel event to the chat canvas for scrolling
         self.bind_mousewheel()
+
+        # Variable to track the current mode (Send or RAG Search)
+        self.current_mode = "Send"
+        self.database_name = None
+
+    def set_send_mode(self):
+        self.current_mode = "Send"
+        self.send_menu_button.config(text="Send")
+
+    def show_rag_popup(self):
+        self.database_name = simpledialog.askstring("RAG Search", "Enter the database name:")
+        if self.database_name:
+            self.set_rag_mode()
+
+    def set_rag_mode(self):
+        self.current_mode = "RAG Search"
+        self.send_menu_button.config(text="RAG Search")
 
     def on_frame_configure(self, event=None):
         """Update the scroll region of the canvas when the frame is configured."""
@@ -174,27 +154,6 @@ class ChatApp:
             copy_button.pack(side='left')
             copy_button.bind("<Button-1>", lambda e, b=bubble: self.copy_to_clipboard(b))
 
-            # Function to create a tooltip
-            def create_tooltip(widget, text):
-                tooltip = tk.Toplevel(widget)
-                tooltip.wm_overrideredirect(True)
-                tooltip.wm_geometry("+0+0")
-                label = tk.Label(tooltip, text=text, bg='#2e2e2e', fg='white', font=("Arial", 10), bd=1, relief="solid")
-                label.pack()
-
-                def enter(event):
-                    x = event.x_root + 10
-                    y = event.y_root + 10
-                    tooltip.wm_geometry(f"+{x}+{y}")
-                    tooltip.deiconify()
-
-                def leave(event):
-                    tooltip.withdraw()
-
-                widget.bind("<Enter>", enter)
-                widget.bind("<Leave>", leave)
-                tooltip.withdraw()
-
             # Create tooltips for the buttons
             create_tooltip(retry_button, "Retry")
             create_tooltip(copy_button, "Copy")
@@ -215,8 +174,6 @@ class ChatApp:
         self.root.clipboard_append(text.strip())
         self.root.update()  # now it stays on the clipboard after the window is closed
 
-
-
     def send_message(self, event=None):
         """Handle sending of a message."""
         user_message = self.entry.get()
@@ -225,7 +182,10 @@ class ChatApp:
             self.add_message(user_message, "You")
             self.entry.delete(0, tk.END)
             self.stop_processing_flag = False  # Reset stop flag
-            self.get_response(user_message)
+            if self.current_mode == "Send":
+                get_response(self, user_message)
+            elif self.current_mode == "RAG Search":
+                rag_search(self, user_message)
 
     def stop_processing(self):
         """Stop processing the response."""
@@ -234,13 +194,19 @@ class ChatApp:
     def retry_message(self):
         """Retry sending the last user message."""
         self.stop_processing_flag = False
-        self.get_response(self.last_user_message)
+        if self.current_mode == "Send":
+            get_response(self, self.last_user_message)
+        elif self.current_mode == "RAG Search":
+            rag_search(self, self.last_user_message)
 
-    def get_response(self, user_message):
-        """Get a response from the model."""
+    def send_document_to_model(self, user_message, document_text):
+        """Send the retrieved document to the model for context inference."""
         payload = {
             "model": "llama3",
-            "messages": [{"role": "user", "content": user_message}],
+            "messages": [{
+                "role": "user",
+                "content": f"You are being asked to infer context from a provided document. The user request is '{user_message}', and the provided document is as follows: '{document_text}'. Please keep answers concise."
+            }],
             "stream": True
         }
         headers = {'Content-Type': 'application/json'}
@@ -280,9 +246,3 @@ class ChatApp:
             self.add_message(f"Error: Unable to contact the model server. {str(e)}", "System")
         except Exception as e:
             self.add_message(f"Error: {str(e)}", "System")
-
-# Main entry point of the program
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = ChatApp(root)
-    root.mainloop()
