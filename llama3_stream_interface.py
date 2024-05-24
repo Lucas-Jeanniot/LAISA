@@ -54,22 +54,22 @@ class ChatApp:
         self.root.columnconfigure(0, weight=1)
 
         # Main frame for the chat application
-        self.main_frame = tk.Frame(root, bg='#2e2e2e')
+        self.main_frame = Frame(root, bg='#2e2e2e')
         self.main_frame.grid(sticky="nsew")
         self.main_frame.rowconfigure(0, weight=1)
         self.main_frame.columnconfigure(0, weight=1)
 
         # Canvas to hold the chat messages
-        self.chat_canvas = tk.Canvas(self.main_frame, bg='#2e2e2e', highlightthickness=0)
+        self.chat_canvas = Canvas(self.main_frame, bg='#2e2e2e', highlightthickness=0)
         self.chat_canvas.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 
         # Scrollbar for the chat messages
-        self.scrollbar = tk.Scrollbar(self.main_frame, command=self.chat_canvas.yview)
+        self.scrollbar = Scrollbar(self.main_frame, command=self.chat_canvas.yview)
         self.scrollbar.grid(row=0, column=1, sticky='ns')
         self.chat_canvas.config(yscrollcommand=self.scrollbar.set)
 
         # Frame to hold the chat messages inside the canvas
-        self.message_frame = tk.Frame(self.chat_canvas, bg='#2e2e2e')
+        self.message_frame = Frame(self.chat_canvas, bg='#2e2e2e')
         self.message_frame_id = self.chat_canvas.create_window((0, 0), window=self.message_frame, anchor="nw")
 
         # Bind events for resizing and scrolling
@@ -78,7 +78,7 @@ class ChatApp:
         self.root.bind("<Configure>", self.on_root_resize)
 
         # Entry frame for user input
-        self.entry_frame = tk.Frame(self.main_frame, bg='#2e2e2e')
+        self.entry_frame = Frame(self.main_frame, bg='#2e2e2e')
         self.entry_frame.grid(row=1, column=0, columnspan=3, padx=10, pady=(0, 10), sticky="ew")
         self.entry_frame.columnconfigure(0, weight=1)
 
@@ -160,29 +160,62 @@ class ChatApp:
             msg_label.pack(fill='x', expand=True, anchor='w')
 
         if sender == "Model":
+            # Create a frame to hold the buttons and ensure alignment
+            button_frame = tk.Frame(self.message_frame, bg='#2e2e2e')
+            button_frame.pack(anchor='w', padx=10, pady=(0, 5))
+
             # Create a retry button for the model responses
-            retry_button = tk.Label(self.message_frame, text="⟳", bg=self.message_frame.cget("bg"), fg='white', font=("Arial", 16, "bold"))
-            retry_button.pack(anchor='w', padx=10, pady=(0, 5))
+            retry_button = tk.Label(button_frame, text="⟳", bg='#2e2e2e', fg='white', font=("Arial", 16, "bold"))
+            retry_button.pack(side='left', padx=(0, 5))
             retry_button.bind("<Button-1>", lambda e: self.retry_message())
 
-            # Tooltip for retry button
-            retry_tooltip = tk.Label(self.message_frame, text="Retry", bg='#2e2e2e', fg='white', font=("Arial", 10), bd=1, relief="solid")
-            retry_tooltip.place_forget()
+            # Create a copy button for the model responses
+            copy_button = tk.Label(button_frame, text="📋", bg='#2e2e2e', fg='white', font=("Arial", 12, "bold"))
+            copy_button.pack(side='left')
+            copy_button.bind("<Button-1>", lambda e, b=bubble: self.copy_to_clipboard(b))
 
-            def show_tooltip(event):
-                retry_tooltip.place(x=event.x_root - self.message_frame.winfo_rootx(), y=event.y_root - self.message_frame.winfo_rooty() - 30)
-            
-            def hide_tooltip(event):
-                retry_tooltip.place_forget()
+            # Function to create a tooltip
+            def create_tooltip(widget, text):
+                tooltip = tk.Toplevel(widget)
+                tooltip.wm_overrideredirect(True)
+                tooltip.wm_geometry("+0+0")
+                label = tk.Label(tooltip, text=text, bg='#2e2e2e', fg='white', font=("Arial", 10), bd=1, relief="solid")
+                label.pack()
 
-            retry_button.bind("<Enter>", show_tooltip)
-            retry_button.bind("<Leave>", hide_tooltip)
+                def enter(event):
+                    x = event.x_root + 10
+                    y = event.y_root + 10
+                    tooltip.wm_geometry(f"+{x}+{y}")
+                    tooltip.deiconify()
+
+                def leave(event):
+                    tooltip.withdraw()
+
+                widget.bind("<Enter>", enter)
+                widget.bind("<Leave>", leave)
+                tooltip.withdraw()
+
+            # Create tooltips for the buttons
+            create_tooltip(retry_button, "Retry")
+            create_tooltip(copy_button, "Copy")
 
         self.chat_canvas.update_idletasks()
         self.chat_canvas.configure(scrollregion=self.chat_canvas.bbox("all"))
         if not self.user_scrolled_up:
             self.chat_canvas.yview_moveto(1.0)
         return bubble
+
+    def copy_to_clipboard(self, bubble):
+        """Copy text to clipboard."""
+        text = ""
+        for label in bubble.winfo_children():
+            if isinstance(label, tk.Label):
+                text += label.cget("text") + "\n"
+        self.root.clipboard_clear()
+        self.root.clipboard_append(text.strip())
+        self.root.update()  # now it stays on the clipboard after the window is closed
+
+
 
     def send_message(self, event=None):
         """Handle sending of a message."""
