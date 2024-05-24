@@ -1,8 +1,6 @@
 import subprocess
 import sys
 import socket
-import os
-import signal
 import atexit
 import tkinter as tk
 from tkinter import Canvas, Frame, Scrollbar
@@ -16,7 +14,7 @@ def install_packages():
         import requests
     except ImportError:
         print("requests package not found. Installing...")
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
 
 # Call the function to install packages
 install_packages()
@@ -51,31 +49,25 @@ class ChatApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Chat Interface")
-
-        # Set dark grey background
         self.root.configure(bg='#2e2e2e')
-        
-        # Configure the root window to expand
         self.root.rowconfigure(0, weight=1)
         self.root.columnconfigure(0, weight=1)
-        
+
         # Main frame for the chat application
         self.main_frame = tk.Frame(root, bg='#2e2e2e')
         self.main_frame.grid(sticky="nsew")
-
-        # Configure the main frame to expand
         self.main_frame.rowconfigure(0, weight=1)
         self.main_frame.columnconfigure(0, weight=1)
-        
+
         # Canvas to hold the chat messages
-        self.chat_canvas = Canvas(self.main_frame, bg='#2e2e2e', highlightthickness=0)
+        self.chat_canvas = tk.Canvas(self.main_frame, bg='#2e2e2e', highlightthickness=0)
         self.chat_canvas.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
-        
+
         # Scrollbar for the chat messages
-        self.scrollbar = Scrollbar(self.main_frame, command=self.chat_canvas.yview)
+        self.scrollbar = tk.Scrollbar(self.main_frame, command=self.chat_canvas.yview)
         self.scrollbar.grid(row=0, column=1, sticky='ns')
         self.chat_canvas.config(yscrollcommand=self.scrollbar.set)
-        
+
         # Frame to hold the chat messages inside the canvas
         self.message_frame = tk.Frame(self.chat_canvas, bg='#2e2e2e')
         self.message_frame_id = self.chat_canvas.create_window((0, 0), window=self.message_frame, anchor="nw")
@@ -84,14 +76,12 @@ class ChatApp:
         self.message_frame.bind("<Configure>", self.on_frame_configure)
         self.chat_canvas.bind("<Configure>", self.on_canvas_configure)
         self.root.bind("<Configure>", self.on_root_resize)
-        
+
         # Entry frame for user input
         self.entry_frame = tk.Frame(self.main_frame, bg='#2e2e2e')
         self.entry_frame.grid(row=1, column=0, columnspan=3, padx=10, pady=(0, 10), sticky="ew")
-
-        # Configure the entry frame to expand
         self.entry_frame.columnconfigure(0, weight=1)
-        
+
         # Text entry box for user input
         self.entry = tk.Entry(self.entry_frame, width=50, bg='#4d4d4d', fg='white', insertbackground='white')
         self.entry.grid(row=0, column=0, sticky="ew")
@@ -132,12 +122,9 @@ class ChatApp:
 
     def on_mouse_wheel(self, event):
         """Handle mouse wheel scrolling."""
-        if event.delta < 0 or (event.num == 5):  # Scroll down
-            self.chat_canvas.yview_scroll(1, "units")
-            self.user_scrolled_up = False  # User is scrolling down
-        elif event.delta > 0 or (event.num == 4):  # Scroll up
-            self.chat_canvas.yview_scroll(-1, "units")
-            self.user_scrolled_up = True  # User is scrolling up
+        scroll = -1 if event.delta > 0 or event.num == 4 else 1
+        self.chat_canvas.yview_scroll(scroll, "units")
+        self.user_scrolled_up = scroll == -1
 
     def bind_mousewheel(self):
         """Enable scrolling with the mouse wheel when the cursor is over the canvas."""
@@ -158,38 +145,38 @@ class ChatApp:
 
     def add_message(self, message, sender):
         """Add a message to the chat interface."""
-        if sender == "You":
-            bubble_color = '#4d4d4d'
-            text_color = 'white'
-            anchor = 'e'
-        else:
-            bubble_color = '#3a3a3a'
-            text_color = 'white'
-            anchor = 'w'
-        
+        bubble_color, text_color, anchor = ('#4d4d4d', 'white', 'e') if sender == "You" else ('#3a3a3a', 'white', 'w')
+
         # Create a frame for the message bubble
-        bubble = Frame(self.message_frame, bg=bubble_color, bd=5)
+        bubble = tk.Frame(self.message_frame, bg=bubble_color, bd=5)
         bubble.pack(anchor=anchor, padx=10, pady=5, ipadx=5, ipady=5, fill='x', expand=True)
-        
+
         # Split message by code blocks
         parts = message.split('```')
+        wraplength = self.chat_canvas.winfo_width() - 40
         for i, part in enumerate(parts):
-            wraplength = self.chat_canvas.winfo_width() - 40
-            if i % 2 == 0:
-                # Normal text message
-                msg_label = tk.Label(bubble, text=part, bg=bubble_color, fg=text_color, font=('Arial', 12), wraplength=wraplength, justify=tk.LEFT, anchor='w')
-            else:
-                # Code block message
-                msg_label = tk.Label(bubble, text=part, bg=bubble_color, fg=text_color, font=('Courier', 12), wraplength=wraplength, justify=tk.LEFT, anchor='w')
+            font = ('Courier', 12) if i % 2 else ('Arial', 12)
+            msg_label = tk.Label(bubble, text=part, bg=bubble_color, fg=text_color, font=font, wraplength=wraplength, justify=tk.LEFT, anchor='w')
             msg_label.pack(fill='x', expand=True, anchor='w')
 
         if sender == "Model":
             # Create a retry button for the model responses
-            retry_button_canvas = Canvas(bubble, width=30, height=30, bg=bubble_color, highlightthickness=0)
-            retry_button_canvas.pack(anchor='ne', padx=5, pady=5)
-            retry_button_canvas.create_oval(0, 0, 30, 30, fill='white', outline='white')
-            retry_button_canvas.create_text(15, 15, text="⟳", fill='black', font=("Arial", 14))
-            retry_button_canvas.bind("<Button-1>", lambda e: self.retry_message())
+            retry_button = tk.Label(self.message_frame, text="⟳", bg=self.message_frame.cget("bg"), fg='white', font=("Arial", 16, "bold"))
+            retry_button.pack(anchor='w', padx=10, pady=(0, 5))
+            retry_button.bind("<Button-1>", lambda e: self.retry_message())
+
+            # Tooltip for retry button
+            retry_tooltip = tk.Label(self.message_frame, text="Retry", bg='#2e2e2e', fg='white', font=("Arial", 10), bd=1, relief="solid")
+            retry_tooltip.place_forget()
+
+            def show_tooltip(event):
+                retry_tooltip.place(x=event.x_root - self.message_frame.winfo_rootx(), y=event.y_root - self.message_frame.winfo_rooty() - 30)
+            
+            def hide_tooltip(event):
+                retry_tooltip.place_forget()
+
+            retry_button.bind("<Enter>", show_tooltip)
+            retry_button.bind("<Leave>", hide_tooltip)
 
         self.chat_canvas.update_idletasks()
         self.chat_canvas.configure(scrollregion=self.chat_canvas.bbox("all"))
@@ -220,12 +207,7 @@ class ChatApp:
         """Get a response from the model."""
         payload = {
             "model": "llama3",
-            "messages": [
-                {
-                    "role": "user",
-                    "content": user_message
-                }
-            ],
+            "messages": [{"role": "user", "content": user_message}],
             "stream": True
         }
         headers = {'Content-Type': 'application/json'}
