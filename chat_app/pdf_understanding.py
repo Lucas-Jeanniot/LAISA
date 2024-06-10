@@ -63,7 +63,6 @@ def infer_context_from_pdf(self, user_message):
                 break
 
             partial_response += response_chunk
-            print(f"Chunk: {response_chunk}")  # Debug print to trace responses
 
             for label in response_bubble.winfo_children():
                 if isinstance(label, tk.Label):
@@ -77,7 +76,5 @@ def infer_context_from_pdf(self, user_message):
 
         full_response += partial_response
 
-    # Add the model's response to the chat history
-    self.chat_history.append({"role": "assistant", "content": full_response})
-    print("Full Response:", full_response)  # Debug print to trace full response
-
+    # Add the model's response to the LangChain memory
+    self.memory.chat_memory.add_ai_message(full_response)

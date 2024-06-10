@@ -8,8 +8,8 @@ def get_response(self, user_message):
     """Get a response from the model using LangChain with streaming."""
     llm = Ollama(model="llama3")
 
-    # Add the user's message to the chat history
-    self.chat_history.append({"role": "user", "content": user_message})
+    # Add the user's message to the LangChain memory
+    self.memory.chat_memory.add_user_message(user_message)
     response_bubble = self.add_message("", "Model")
 
     try:
@@ -24,7 +24,8 @@ def get_response(self, user_message):
         """
 
         # Format chat history for the prompt
-        formatted_history = "\n".join([f"{msg['role']}: {msg['content']}" for msg in self.chat_history])
+        chat_history = self.memory.load_memory_variables({})
+        formatted_history = chat_history['history']
         prompt = ChatPromptTemplate.from_template(template)
         chain = prompt | llm
 
@@ -54,9 +55,8 @@ def get_response(self, user_message):
             self.root.update_idletasks()
             self.root.update()
 
-        # Add the model's response to the chat history
-        self.chat_history.append({"role": "assistant", "content": partial_response})
+        # Add the model's response to the LangChain memory
+        self.memory.chat_memory.add_ai_message(partial_response)
 
     except Exception as e:
         self.add_message(f"Error: {str(e)}", "System")
-

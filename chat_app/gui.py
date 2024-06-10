@@ -4,6 +4,7 @@ from utils import create_tooltip
 from rag_search import rag_search
 from pdf_understanding import extract_text_from_pdf, infer_context_from_pdf
 from inference import get_response
+from langchain.memory import ConversationBufferMemory
 
 class ChatApp:
     def __init__(self, root):
@@ -82,7 +83,7 @@ class ChatApp:
         self.pdf_text = ""
 
         # Initialize chat history
-        self.chat_history = []
+        self.memory = ConversationBufferMemory()
 
     def set_send_mode(self):
         self.current_mode = "Send"
@@ -203,16 +204,17 @@ class ChatApp:
             print("Sending message:", user_message)  # Debug print
             self.last_user_message = user_message
             self.add_message(user_message, "You")
-            self.chat_history.append({"role": "user", "content": user_message})
+            self.memory.chat_memory.add_user_message(user_message)
             self.entry.delete(0, tk.END)
             self.stop_processing_flag = False  # Reset stop flag
+
             if self.current_mode == "PDF Search":
                 print("PDF Mode Active")  # Debug print
-                infer_context_from_pdf(self, self.pdf_text, user_message)
+                infer_context_from_pdf(self, user_message)
             elif self.current_mode == "Send":
                 get_response(self, user_message)
             elif self.current_mode == "RAG Search":
-                rag_search(self, user_message)
+                rag_search(user_message)
 
 
     def stop_processing(self):
