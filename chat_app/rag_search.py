@@ -1,5 +1,5 @@
 import requests, json, time
-from langchain_community import Ollama
+from langchain_community.llms import Ollama
 from langchain.prompts import ChatPromptTemplate
 from langchain.memory import ConversationBufferMemory
 import tkinter as tk
