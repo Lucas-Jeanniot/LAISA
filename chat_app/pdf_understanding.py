@@ -36,7 +36,8 @@ def infer_context_from_pdf(self, pdf_text, user_message):
     
     prompt_template = """
         You are a helpful assistant. Answer the following question considering the provided document context:
-
+        Never make up data, if you do not know the answer, simply say "I don't know that information sorry! Could you provide more context?"
+        
         Document Context: {document_context}
 
         User question: {user_question}
