@@ -16,20 +16,15 @@ def extract_text_from_pdf(pdf_path):
         print(f"Error extracting text from PDF: {e}")
     return pdf_text
 
-def chunk_text(text, chunk_size=1000):
-    """Chunk text into smaller pieces."""
-    return [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]
-
-def infer_context_from_pdf(self, user_message):
+def infer_context_from_pdf(self, pdf_text, user_message):
     """Infer context from the extracted PDF text using the LLM with streaming."""
-    if not self.pdf_text:
+    if not pdf_text:
         self.add_message("Error: No text extracted from PDF.", "System")
         return
 
     print("Starting PDF inference")  # Debug print
 
-    # Chunk the extracted text
-    text_chunks = chunk_text(self.pdf_text)
+    
 
     # Initialize LLM
     llm = Ollama(model="llama3")
@@ -38,43 +33,43 @@ def infer_context_from_pdf(self, user_message):
     response_bubble = self.add_message("", "Model")
 
     full_response = ""
-    for chunk in text_chunks:
-        prompt_template = """
+    
+    prompt_template = """
         You are a helpful assistant. Answer the following question considering the provided document context:
 
         Document Context: {document_context}
 
         User question: {user_question}
         """
-        prompt = ChatPromptTemplate.from_template(prompt_template)
-        chain = prompt | llm
+    prompt = ChatPromptTemplate.from_template(prompt_template)
+    chain = prompt | llm
 
-        formatted_prompt = {
-            "document_context": chunk,
+    formatted_prompt = {
+            "document_context": pdf_text,
             "user_question": user_message,
         }
 
-        response_stream = chain.stream(formatted_prompt)
+    response_stream = chain.stream(formatted_prompt)
 
-        partial_response = ""
-        for response_chunk in response_stream:
-            if self.stop_processing_flag:
-                print("Processing stopped by user.")
-                break
+    partial_response = ""
+    for response_chunk in response_stream:
+        if self.stop_processing_flag:
+            print("Processing stopped by user.")
+            break
 
-            partial_response += response_chunk
+        partial_response += response_chunk
 
-            for label in response_bubble.winfo_children():
-                if isinstance(label, tk.Label):
-                    label.config(text=partial_response)
+        for label in response_bubble.winfo_children():
+            if isinstance(label, tk.Label):
+                label.config(text=partial_response)
 
-            self.chat_canvas.update_idletasks()
-            if not self.user_scrolled_up:
-                self.chat_canvas.yview_moveto(1.0)
-            self.root.update_idletasks()
-            self.root.update()
+        self.chat_canvas.update_idletasks()
+        if not self.user_scrolled_up:
+            self.chat_canvas.yview_moveto(1.0)
+        self.root.update_idletasks()
+        self.root.update()
 
-        full_response += partial_response
+    full_response += partial_response
 
     # Add the model's response to the LangChain memory
     self.memory.chat_memory.add_ai_message(full_response)

@@ -210,7 +210,7 @@ class ChatApp:
 
             if self.current_mode == "PDF Search":
                 print("PDF Mode Active")  # Debug print
-                infer_context_from_pdf(self, user_message)
+                infer_context_from_pdf(self, self.pdf_text, user_message)
             elif self.current_mode == "Send":
                 get_response(self, user_message)
             elif self.current_mode == "RAG Search":
