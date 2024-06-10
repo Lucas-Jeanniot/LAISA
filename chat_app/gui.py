@@ -1,7 +1,8 @@
 import json, requests, sys, time, tkinter as tk
-from tkinter import Canvas, Frame, Scrollbar, Menu, simpledialog
+from tkinter import Canvas, Frame, Scrollbar, Menu, simpledialog, filedialog
 from utils import create_tooltip
 from rag_search import rag_search
+from pdf_understanding import extract_text_from_pdf, infer_context_from_pdf
 from inference import get_response
 
 class ChatApp:
@@ -51,6 +52,7 @@ class ChatApp:
         self.send_menu = Menu(self.send_menu_button, tearoff=0)
         self.send_menu.add_command(label="Send", command=self.set_send_mode)
         self.send_menu.add_command(label="RAG Search", command=self.show_rag_popup)
+        self.send_menu.add_command(label="Extract PDF", command=self.set_pdf_mode)
         self.send_menu_button.config(menu=self.send_menu)
         self.send_menu_button.grid(row=0, column=1, padx=(10, 0))
 
@@ -70,9 +72,14 @@ class ChatApp:
         # Bind mouse wheel event to the chat canvas for scrolling
         self.bind_mousewheel()
 
-        # Variable to track the current mode (Send or RAG Search)
+        # Variable to track the current mode (Send or RAG Search, or PDF Search)
         self.current_mode = "Send"
         self.database_name = None
+
+         # Initialize PDF mode related attributes
+        self.pdf_mode = False
+        self.pdf_upload_button = None
+        self.pdf_text = ""
 
         # Initialize chat history
         self.chat_history = []
@@ -89,6 +96,18 @@ class ChatApp:
     def set_rag_mode(self):
         self.current_mode = "RAG Search"
         self.send_menu_button.config(text="RAG Search")
+
+    def set_pdf_mode(self):
+        """Set the mode to PDF extraction."""
+        self.current_mode = "PDF Search"
+
+        self.send_menu_button.config(text="PDF Mode")
+        if not self.pdf_upload_button:
+            self.pdf_upload_button = tk.Button(self.entry_frame, text="Upload PDF", command=self.upload_pdf, bg='#4d4d4d', fg='black', activebackground='#4d4d4d', activeforeground='black')
+            self.pdf_upload_button.grid(row=0, column=3, padx=(10, 0))
+        else:
+            self.pdf_upload_button.grid()
+
 
     def on_frame_configure(self, event=None):
         """Update the scroll region of the canvas when the frame is configured."""
@@ -181,12 +200,16 @@ class ChatApp:
         """Handle sending of a message."""
         user_message = self.entry.get()
         if user_message:
+            print("Sending message:", user_message)  # Debug print
             self.last_user_message = user_message
             self.add_message(user_message, "You")
             self.chat_history.append({"role": "user", "content": user_message})
             self.entry.delete(0, tk.END)
             self.stop_processing_flag = False  # Reset stop flag
-            if self.current_mode == "Send":
+            if self.current_mode == "PDF Search":
+                print("PDF Mode Active")  # Debug print
+                infer_context_from_pdf(self, self.pdf_text, user_message)
+            elif self.current_mode == "Send":
                 get_response(self, user_message)
             elif self.current_mode == "RAG Search":
                 rag_search(self, user_message)
@@ -252,3 +275,12 @@ class ChatApp:
             self.add_message(f"Error: Unable to contact the model server. {str(e)}", "System")
         except Exception as e:
             self.add_message(f"Error: {str(e)}", "System")
+
+    def upload_pdf(self):
+        """Handle PDF upload and extraction."""
+        pdf_path = filedialog.askopenfilename(filetypes=[("PDF files", "*.pdf")])
+        if pdf_path:
+            self.add_message("PDF extraction in progress...", "System")
+            self.root.update_idletasks()
+            self.pdf_text = extract_text_from_pdf(pdf_path)
+            self.add_message("PDF extraction complete. You can now ask questions about the PDF.", "System")

@@ -14,7 +14,9 @@ def get_response(self, user_message):
 
     try:
         template = """
-        You are a helpful assistant. Answer the following question considering the history of the conversation:
+        You are Clippy 2.0, a desktop chatbot assistant. 
+        
+        Answer the following questions considering the history of the conversation:
 
         Chat history: {chat_history}
 
