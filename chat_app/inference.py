@@ -1,46 +1,60 @@
-import requests,json,time, tkinter as tk
+import json
+import time
+import tkinter as tk
+from langchain_community.llms import Ollama
+from langchain.prompts import ChatPromptTemplate
 
 def get_response(self, user_message):
-    """Get a response from the model."""
-    payload = {
-        "model": "llama3",
-        "messages": [{"role": "user", "content": user_message}],
-        "stream": True
-    }
-    headers = {'Content-Type': 'application/json'}
+    """Get a response from the model using LangChain with streaming."""
+    llm = Ollama(model="llama3")
 
-    # Add an empty message bubble for the response
+    # Add the user's message to the chat history
+    self.chat_history.append({"role": "user", "content": user_message})
     response_bubble = self.add_message("", "Model")
 
     try:
-        # Make a POST request to the model server with streaming enabled
-        with requests.post("http://localhost:11434/api/chat", data=json.dumps(payload), headers=headers, stream=True) as response:
-            response.raise_for_status()
-            partial_response = ""
-            time.sleep(2)  # Add delay before starting to process chunks
-            for line in response.iter_lines():
-                if self.stop_processing_flag:
-                    print("Processing stopped by user.")
-                    break
-                if line:
-                    decoded_line = line.decode('utf-8')
-                    try:
-                        json_response = json.loads(decoded_line)
-                        response_chunk = json_response.get('message', {}).get('content', '')
-                        partial_response += response_chunk
-                        for label in response_bubble.winfo_children():
-                            if isinstance(label, tk.Label):
-                                label.config(text=partial_response)
-                        self.chat_canvas.update_idletasks()
-                        if not self.user_scrolled_up:
-                            self.chat_canvas.yview_moveto(1.0)
-                        self.root.update_idletasks()
-                        self.root.update()
-                    except json.JSONDecodeError as e:
-                        print(f"Error decoding JSON: {e}")
-                    except Exception as e:
-                        print(f"Error updating UI: {e}")
-    except requests.exceptions.RequestException as e:
-        self.add_message(f"Error: Unable to contact the model server. {str(e)}", "System")
+        template = """
+        You are a helpful assistant. Answer the following question considering the history of the conversation:
+
+        Chat history: {chat_history}
+
+        User question: {user_question}
+        """
+
+        # Format chat history for the prompt
+        formatted_history = "\n".join([f"{msg['role']}: {msg['content']}" for msg in self.chat_history])
+        prompt = ChatPromptTemplate.from_template(template)
+        chain = prompt | llm
+
+        # Initialize streaming
+        response_stream = chain.stream({
+            "chat_history": formatted_history,
+            "user_question": user_message,
+        })
+
+        partial_response = ""
+        time.sleep(2)  # Add delay before starting to process chunks
+
+        for response_chunk in response_stream:
+            if self.stop_processing_flag:
+                print("Processing stopped by user.")
+                break
+
+            partial_response += response_chunk
+
+            for label in response_bubble.winfo_children():
+                if isinstance(label, tk.Label):
+                    label.config(text=partial_response)
+
+            self.chat_canvas.update_idletasks()
+            if not self.user_scrolled_up:
+                self.chat_canvas.yview_moveto(1.0)
+            self.root.update_idletasks()
+            self.root.update()
+
+        # Add the model's response to the chat history
+        self.chat_history.append({"role": "assistant", "content": partial_response})
+
     except Exception as e:
         self.add_message(f"Error: {str(e)}", "System")
+

@@ -74,6 +74,9 @@ class ChatApp:
         self.current_mode = "Send"
         self.database_name = None
 
+        # Initialize chat history
+        self.chat_history = []
+
     def set_send_mode(self):
         self.current_mode = "Send"
         self.send_menu_button.config(text="Send")
@@ -180,12 +183,14 @@ class ChatApp:
         if user_message:
             self.last_user_message = user_message
             self.add_message(user_message, "You")
+            self.chat_history.append({"role": "user", "content": user_message})
             self.entry.delete(0, tk.END)
             self.stop_processing_flag = False  # Reset stop flag
             if self.current_mode == "Send":
                 get_response(self, user_message)
             elif self.current_mode == "RAG Search":
                 rag_search(self, user_message)
+
 
     def stop_processing(self):
         """Stop processing the response."""
@@ -198,6 +203,7 @@ class ChatApp:
             get_response(self, self.last_user_message)
         elif self.current_mode == "RAG Search":
             rag_search(self, self.last_user_message)
+
 
     def send_document_to_model(self, user_message, document_text):
         """Send the retrieved document to the model for context inference."""
