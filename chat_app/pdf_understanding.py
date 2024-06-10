@@ -37,7 +37,7 @@ def infer_context_from_pdf(self, pdf_text, user_message):
     prompt_template = """
         You are a helpful assistant. Answer the following question considering the provided document context:
         Always answer truthfully, never make up answers, if you do not know the answer, simply say "I don't know that information sorry! Could you provide more context?"
-        Answer the following questions considering the history of the conversation, try not to repeat previous instances of the conversation history unless required:
+        Answer the following questions considering the history of the conversation, try not to repeat previous instances of the conversation history unless required, if the conversation memory is empty, don't reference that:
 
         Document Context: {document_context}
 
