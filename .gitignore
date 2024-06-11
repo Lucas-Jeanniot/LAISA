@@ -1,4 +1,5 @@
 .DS_Store
+node_modules
 package-lock.json
 backend/__pycache__/inference.cpython-311.pyc
 backend/__pycache__/pdf_understanding.cpython-311.pyc
