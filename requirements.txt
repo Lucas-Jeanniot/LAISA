@@ -3,3 +3,4 @@ flask_cors
 PyPDF2
 langchain_community
 langchain 
+requests
