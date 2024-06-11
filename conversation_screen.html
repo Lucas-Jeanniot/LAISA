@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Conversation</title>
+    <link rel="stylesheet" type="text/css" href="styles/styles.css">
+    <link rel="stylesheet" type="text/css" href="styles/conversation_screen.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="banner-content">
+            <button class="home-button" onclick="window.location.href='index.html'">Home</button>
+            <h1>Clippy 2.0</h1>
+            <img src="assets/banner_icon.png" alt="Banner Icon">
+        </div>
+    </header>
+    <div class="container">
+        <div class="sidebar">
+            <h2>Conversations</h2>
+            <!-- Placeholder for future conversation history items -->
+        </div>
+        <div class="chat-container">
+            <div id="messages" class="messages">
+                <!-- Messages will appear here -->
+            </div>
+            <div class="input-container">
+                <input type="text" id="messageInput" placeholder="Type your message here...">
+                <button id="sendButton">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('sendButton').addEventListener('click', sendMessage);
+        document.getElementById('messageInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            if (message) {
+                appendMessage('You', message, 'user-message');
+                messageInput.value = '';
+                initiateStreaming(message);
+            }
+        }
+
+        function appendMessage(sender, text, className) {
+            const messages = document.getElementById('messages');
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${className}`;
+            messageElement.innerHTML = `<strong>${sender}:</strong> <span>${text}</span>`;
+            messages.appendChild(messageElement);
+            messages.scrollTop = messages.scrollHeight;
+            return messageElement;
+        }
+
+        async function initiateStreaming(userMessage) {
+            try {
+                const response = await fetch('http://localhost:5001/api/message', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: userMessage })
+                });
+
+                if (response.ok) {
+                    const { user_message } = await response.json();
+                    streamResponse(user_message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function streamResponse(userMessage) {
+            const eventSource = new EventSource(`http://localhost:5001/api/stream?message=${encodeURIComponent(userMessage)}`);
+            const responseBubble = appendMessage('Model', '', 'llm-message');
+
+            eventSource.onmessage = function(event) {
+                console.log('Received chunk:', event.data); // Debug log
+                updateMessage(responseBubble, event.data);
+            };
+
+            eventSource.onerror = function() {
+                console.error('EventSource failed'); // Debug log
+                eventSource.close();
+            };
+        }
+
+        function updateMessage(element, text) {
+            const span = element.querySelector('span');
+            span.textContent += text;
+            const messages = document.getElementById('messages');
+            messages.scrollTop = messages.scrollHeight;
+        }
+    </script>
+</body>
+</html>

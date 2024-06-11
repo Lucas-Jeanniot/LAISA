@@ -1,0 +1,49 @@
+{
+  "name": "chatbot_app",
+  "version": "1.0.0",
+  "description": "App for the Python based LlaMA Desktop Chatbot, working title \"CLipPY2.0\"",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lucas-Jeanniot/clippy_2.0.git"
+  },
+  "keywords": [
+    "AI",
+    "LLM",
+    "Chatbot",
+    "Desktop",
+    "Assistant"
+  ],
+  "author": "Lucas Jeanniot",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Lucas-Jeanniot/clippy_2.0"
+  },
+  "homepage": "https://github.com/Lucas-Jeanniot/clippy_2.0#readme",
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^22.11.7"
+  },
+  "build": {
+    "appId": "com.example.chatbotapp",
+    "files": [
+      "main.js",
+      "index.html",
+      "preload.js",
+      "backend/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.utilities"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}

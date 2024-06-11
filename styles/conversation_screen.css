@@ -1,0 +1,97 @@
+/* conversation_screen.css */
+
+/* Container for the entire conversation screen */
+.container {
+    display: flex;
+    height: 100vh;
+    background: linear-gradient(135deg, #1c1c1c, #0d0d0d);
+}
+
+/* Sidebar styling */
+.sidebar {
+    width: 250px;
+    background-color: #202020;
+    padding: 20px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.sidebar h2 {
+    color: #ffffff;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 20px;
+    margin-bottom: 20px;
+}
+
+/* Chat container styling */
+.chat-container {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 20px;
+}
+
+.messages {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding-right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.input-container {
+    display: flex;
+    margin-top: 10px;
+    background: #333;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.input-container input {
+    flex-grow: 1;
+    padding: 10px;
+    background: #333;
+    border: none;
+    color: #ffffff;
+    border-radius: 5px;
+    margin-right: 10px;
+}
+
+.input-container button {
+    background: #00ff00;
+    color: #000000;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background 0.3s ease;
+}
+
+.input-container button:hover {
+    background: #00cc00;
+}
+
+/* Message styles */
+.message {
+    padding: 10px;
+    border-radius: 15px;
+    font-family: 'Arial', sans-serif;
+    word-wrap: break-word;
+    max-width: 100%;
+}
+
+.user-message {
+    background: #4caf50;
+    color: #ffffff;
+    align-self: flex-end;
+}
+
+.llm-message {
+    background: #1e88e5;
+    color: #ffffff;
+    align-self: flex-start;
+}

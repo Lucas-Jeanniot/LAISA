@@ -1,0 +1,136 @@
+body {
+    background: linear-gradient(135deg, #0d0d0d, #1c1c1c);
+    color: #d3d3d3;
+    font-family: 'Orbitron', sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+header {
+    width: 100%;
+    background: #202020;
+    padding: 10px 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header .banner-content {
+    display: flex;
+    align-items: center;
+}
+
+header .banner-content h1 {
+    color: #ffffff;
+    font-size: 24px;
+    margin: 0 10px 0 0;
+}
+
+header .banner-content img {
+    width: 40px;
+    height: 40px;
+}
+
+header .home-button {
+    background: #00ff00;
+    color: #000000;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background 0.3s ease;
+}
+
+header .home-button:hover {
+    background: #00cc00;
+}
+
+.container {
+    display: flex;
+    flex: 1;
+    height: calc(100% - 50px); /* Adjust height to fit within the screen excluding the header */
+}
+
+.sidebar {
+    width: 20%;
+    background: #2b2b2b;
+    padding: 20px;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+    overflow-y: auto;
+}
+
+.sidebar h2 {
+    color: #ffffff;
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+
+.chat-container {
+    width: 80%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 20px;
+    background: #1e1e1e;
+    overflow: hidden;
+}
+
+.messages {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+
+.input-container {
+    display: flex;
+    align-items: center;
+}
+
+.input-container input {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    margin-right: 10px;
+    background: #3a3a3a;
+    color: #ffffff;
+}
+
+.input-container button {
+    background: #00ff00;
+    color: #000000;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background 0.3s ease;
+}
+
+.input-container button:hover {
+    background: #00cc00;
+}
+
+/* Message styles */
+.message {
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 5px;
+    max-width: 60%;
+}
+
+.user-message {
+    background: #4caf50;
+    color: #ffffff;
+    align-self: flex-end;
+}
+
+.llm-message {
+    background: #1e88e5;
+    color: #ffffff;
+    align-self: flex-start;
+}
