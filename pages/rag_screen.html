@@ -5,7 +5,7 @@
     <title>RAG Search</title>
     <link rel="stylesheet" type="text/css" href="../styles/styles.css">
     <link rel="stylesheet" type="text/css" href="../styles/rag_screen.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
     <header>
@@ -33,9 +33,17 @@
             </div>
         </div>
     </div>
+    <div class="query-container">
+        <input type="text" id="queryInput" placeholder="Ask a question about the selected document">
+        <button id="queryButton">Submit Query</button>
+    </div>
 
     <script>
+        let selectedDocumentText = '';
+        let documentMessages = {};
+
         document.getElementById('sendButton').addEventListener('click', sendRAGMessage);
+        document.getElementById('queryButton').addEventListener('click', submitQuery);
 
         function appendMessage(sender, text, className) {
             const messages = document.getElementById('messages');
@@ -44,6 +52,7 @@
             messageElement.innerHTML = `<strong>${sender}:</strong> <span>${text}</span>`;
             messages.appendChild(messageElement);
             messages.scrollTop = messages.scrollHeight;
+            return messageElement;
         }
 
         function addDocumentToSidebar(documentText) {
@@ -55,12 +64,20 @@
                 loadDocument(documentText);
             });
             documentList.appendChild(documentItem);
+
+            // Initialize message array for this document
+            documentMessages[documentText] = documentMessages[documentText] || [];
         }
 
         function loadDocument(documentText) {
+            selectedDocumentText = documentText;
             const messages = document.getElementById('messages');
             messages.innerHTML = ''; // Clear existing messages
-            appendMessage('Document', documentText, 'llm-message');
+
+            // Load messages for the selected document
+            documentMessages[documentText].forEach(message => {
+                appendMessage(message.sender, message.text, message.className);
+            });
         }
 
         async function sendRAGMessage() {
@@ -96,6 +113,56 @@
             } else {
                 appendMessage('System', 'Error: Please enter both database name and message.', 'system-message');
             }
+        }
+
+        function submitQuery() {
+            const queryInput = document.getElementById('queryInput').value.trim();
+
+            if (selectedDocumentText && queryInput) {
+                appendMessage('You', queryInput, 'user-message');
+                document.getElementById('queryInput').value = '';
+
+                // Save user message
+                documentMessages[selectedDocumentText].push({
+                    sender: 'You',
+                    text: queryInput,
+                    className: 'user-message'
+                });
+
+                streamResponse(selectedDocumentText, queryInput);
+            } else {
+                appendMessage('System', 'Error: Please select a document and enter a query.', 'system-message');
+            }
+        }
+
+        function streamResponse(documentText, userQuery) {
+            const eventSource = new EventSource(`http://localhost:5001/api/document_query?document_text=${encodeURIComponent(documentText)}&query=${encodeURIComponent(userQuery)}`);
+            const responseBubble = appendMessage('Model', '', 'llm-message');
+            let buffer = '';
+
+            eventSource.onmessage = function(event) {
+                const chunk = event.data.replace('@@END_CHUNK', '');
+                console.log('Received chunk:', chunk); // Debug log
+                buffer += chunk;
+
+                if (event.data.includes('@@END_CHUNK')) {
+                    updateMessage(responseBubble, buffer);
+                    buffer = '';
+                }
+            };
+
+            eventSource.onerror = function() {
+                console.error('EventSource failed'); // Debug log
+                eventSource.close();
+            };
+        }
+
+        function updateMessage(element, text) {
+            const span = element.querySelector('span');
+            // Preserve line breaks and spaces
+            span.innerHTML += text.replace(/<br>/g, '<br>').replace(/\n/g, '<br>');
+            const messages = document.getElementById('messages');
+            messages.scrollTop = messages.scrollHeight;
         }
     </script>
 </body>

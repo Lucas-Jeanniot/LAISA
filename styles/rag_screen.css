@@ -1,9 +1,60 @@
 /* rag_screen.css */
 
+body {
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(135deg, #0d0d0d, #1c1c1c);
+    color: #d3d3d3;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+}
+
+header {
+    width: 100%;
+    background: #202020;
+    padding: 10px 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header .banner-content {
+    display: flex;
+    align-items: center;
+}
+
+header .banner-content h1 {
+    color: #ffffff;
+    font-size: 24px;
+    margin: 0 10px 0 0;
+}
+
+header .banner-content img {
+    width: 40px;
+    height: 40px;
+}
+
+header .home-button {
+    background: #00ff00;
+    color: #000000;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background 0.3s ease;
+}
+
+header .home-button:hover {
+    background: #00cc00;
+}
+
 .container {
     display: flex;
-    height: 100vh;
-    background: linear-gradient(135deg, #1c1c1c, #0d0d0d);
+    height: calc(100% - 110px); /* Adjust height to fit within the screen excluding the header and query input */
 }
 
 .sidebar {
@@ -32,6 +83,9 @@
     margin-bottom: 10px;
     border-radius: 5px;
     cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .document-item:hover {
@@ -44,24 +98,28 @@
     flex-direction: column;
     align-items: center;
     padding: 20px;
+    overflow-y: auto;
 }
 
 .input-container {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     margin-bottom: 20px;
+    width: 100%; /* Full width */
+    justify-content: space-between;
 }
 
 .input-container input {
     margin: 5px;
     padding: 10px;
-    width: 300px;
+    width: 45%; /* Less width to make it smaller */
     border-radius: 5px;
     border: 1px solid #333;
     background: #222;
     color: #fff;
     font-size: 16px;
+    box-sizing: border-box;
 }
 
 .input-container button {
@@ -72,7 +130,6 @@
     border-radius: 5px;
     cursor: pointer;
     font-size: 16px;
-    margin-top: 10px;
 }
 
 .input-container button:hover {
@@ -80,13 +137,14 @@
 }
 
 .messages {
-    width: 80%;
-    max-height: 50vh;
+    width: 100%;
+    max-height: 60vh; /* Increased height for the messages box */
     overflow-y: auto;
     background: #2c2c2c;
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    box-sizing: border-box;
 }
 
 .message {
@@ -94,7 +152,8 @@
     margin: 10px 0;
     border-radius: 5px;
     color: #fff;
-    font-family: 'Orbitron', sans-serif;
+    font-family: 'Roboto', sans-serif;
+    word-wrap: break-word;
 }
 
 .user-message {
@@ -110,4 +169,42 @@
 .system-message {
     background: #f44336;
     align-self: center;
+}
+
+.query-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+    background: #2b2b2b;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+}
+
+.query-container input {
+    padding: 10px;
+    width: 60%;
+    border-radius: 5px;
+    border: 1px solid #333;
+    background: #222;
+    color: #fff;
+    font-size: 16px;
+    margin-right: 10px;
+    box-sizing: border-box;
+}
+
+.query-container button {
+    padding: 10px 20px;
+    background: #00ff00;
+    color: #000;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.query-container button:hover {
+    background: #00cc00;
 }
