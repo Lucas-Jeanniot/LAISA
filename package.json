@@ -1,7 +1,7 @@
 {
   "name": "chatbot_app",
   "version": "1.0.0",
-  "description": "App for the Python based LlaMA Desktop Chatbot, working title \"CLipPY2.0\"",
+  "description": "App for the Python based LlaMA Desktop Chatbot, working title LAISA (Local AI Serch Application)",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -32,7 +32,7 @@
     "appId": "com.example.chatbotapp",
     "files": [
       "main.js",
-      "index.html",
+      "pages/**/*",
       "preload.js",
       "backend/**/*"
     ],

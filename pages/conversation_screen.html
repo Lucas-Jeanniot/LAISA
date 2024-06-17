@@ -11,7 +11,7 @@
     <header>
         <div class="banner-content">
             <button class="home-button" onclick="window.location.href='index.html'">Home</button>
-            <h1>LAISA</h1>
+            <h1>LAISA - Conversational </h1>
             <img src="../assets/banner_icon.png" alt="Banner Icon">
         </div>
     </header>
@@ -103,29 +103,9 @@
         function updateMessage(element, text) {
             const span = element.querySelector('span');
             // Preserve line breaks and spaces
-            span.innerHTML += formatResponse(text);
+            span.innerHTML += text.replace(/:/g, ':<br>').replace(/\./g, '.<br>');
             const messages = document.getElementById('messages');
             messages.scrollTop = messages.scrollHeight;
-        }
-
-        function formatResponse(text) {
-            try {
-                const jsonObj = JSON.parse(text);
-                return `<pre>${JSON.stringify(jsonObj, null, 2)}</pre>`;
-            } catch (e) {
-                // Basic formatting rules: Replace newlines with <br>, preserve whitespace for paragraphs
-                text = text.replace(/(\r\n|\n|\r)/gm, "<br>");
-                text = text.replace(/\s\s+/g, ' ');
-                // Handle spaces around punctuation
-                text = text.replace(/\s([,.!?;:])/g, '$1'); // Remove space before punctuation
-                text = text.replace(/([,.!?;:])\s/g, '$1 '); // Ensure single space after punctuation
-                text = text.replace(/:\s+/g, ':<br>'); // Add <br> after colons
-                text = text.replace(/\.\s+/g, '.<br>'); // Add <br> after periods
-                // Detect and format bullet points and lists
-                text = text.replace(/(\d+)\.\s*/g, '<br>$1. '); // Format numbered lists
-                text = text.replace(/(\*\s)/g, '<br>&bull; '); // Format bullet points
-                return text;
-            }
         }
     </script>
 </body>
