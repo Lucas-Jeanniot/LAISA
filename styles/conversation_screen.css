@@ -32,6 +32,7 @@
     flex-direction: column;
     justify-content: flex-end;
     padding: 20px;
+    overflow: hidden;
 }
 
 .messages {
@@ -77,11 +78,13 @@
 
 /* Message styles */
 .message {
+    white-space: pre-wrap;
     padding: 10px;
     border-radius: 15px;
+    margin: 10px;
     font-family: 'Arial', sans-serif;
     word-wrap: break-word;
-    max-width: 100%;
+    max-width: 80%; /* Change to 80% for a better fit */
 }
 
 .user-message {

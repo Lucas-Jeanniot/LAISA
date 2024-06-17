@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <title>Conversation</title>
-    <link rel="stylesheet" type="text/css" href="styles/styles.css">
-    <link rel="stylesheet" type="text/css" href="styles/conversation_screen.css">
+    <link rel="stylesheet" type="text/css" href="../styles/styles.css">
+    <link rel="stylesheet" type="text/css" href="../styles/conversation_screen.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
     <header>
         <div class="banner-content">
             <button class="home-button" onclick="window.location.href='index.html'">Home</button>
-            <h1>Clippy 2.0</h1>
-            <img src="assets/banner_icon.png" alt="Banner Icon">
+            <h1>LAISA</h1>
+            <img src="../assets/banner_icon.png" alt="Banner Icon">
         </div>
     </header>
     <div class="container">
@@ -81,10 +81,17 @@
         function streamResponse(userMessage) {
             const eventSource = new EventSource(`http://localhost:5001/api/stream?message=${encodeURIComponent(userMessage)}`);
             const responseBubble = appendMessage('Model', '', 'llm-message');
+            let buffer = '';
 
             eventSource.onmessage = function(event) {
-                console.log('Received chunk:', event.data); // Debug log
-                updateMessage(responseBubble, event.data);
+                const chunk = event.data.replace('@@END_CHUNK', '');
+                console.log('Received chunk:', chunk); // Debug log
+                buffer += chunk;
+
+                if (event.data.includes('@@END_CHUNK')) {
+                    updateMessage(responseBubble, buffer);
+                    buffer = '';
+                }
             };
 
             eventSource.onerror = function() {
@@ -95,7 +102,8 @@
 
         function updateMessage(element, text) {
             const span = element.querySelector('span');
-            span.textContent += text;
+            // Preserve line breaks and spaces
+            span.innerHTML += text.replace(/<br>/g, '<br>').replace(/\n/g, '<br>');
             const messages = document.getElementById('messages');
             messages.scrollTop = messages.scrollHeight;
         }

@@ -1,18 +1,28 @@
 import time
+import logging
 from langchain_community.llms import Ollama
 from langchain.prompts import ChatPromptTemplate
 from langchain.memory import ConversationBufferMemory
+from langchain.callbacks.manager import CallbackManager
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+
+# Setup logging
+logging.basicConfig(level=logging.DEBUG, filename='response_log.log', filemode='a', format='%(asctime)s - %(message)s')
 
 memory = ConversationBufferMemory()
 
 def stream_response(user_message):
     """Stream response from the model using LangChain."""
-    llm = Ollama(model="llama3")
+    llm = Ollama(
+        model="llama3",
+        callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
+        verbose=True,
+    )
     memory.chat_memory.add_user_message(user_message)
 
     try:
         template = """
-        You are Clippy 2.0, a desktop chatbot assistant. 
+        You are LAISA (Local AI Search Application), a desktop chatbot assistant. 
         
         Answer the following questions considering the history of the conversation:
 
@@ -36,10 +46,16 @@ def stream_response(user_message):
 
         for response_chunk in response_stream:
             partial_response += response_chunk
-            yield f"data: {response_chunk}\n\n"
+            logging.debug(f"Chunk received: {response_chunk.strip()}")
+            # Add explicit markers for new lines
+            if response_chunk.strip() == " ":
+                yield f"data: <br>@@END_CHUNK\n\n"
+            else:
+                yield f"data: {response_chunk}@@END_CHUNK\n\n"
             time.sleep(0.1)
 
         memory.chat_memory.add_ai_message(partial_response)
 
     except Exception as e:
         yield f"data: {{'error': '{str(e)}'}}\n\n"
+        logging.error(f"Error: {str(e)}")

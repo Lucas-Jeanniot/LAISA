@@ -1,18 +1,18 @@
-import requests, json, time
+import requests, json, time, logging
 from langchain_community.llms import Ollama
 from langchain.prompts import ChatPromptTemplate
 from langchain.memory import ConversationBufferMemory
-import tkinter as tk
+from langchain.callbacks.manager import CallbackManager
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+
+# Setup logging
+logging.basicConfig(level=logging.DEBUG, filename='response_log.log', filemode='a', format='%(asctime)s - %(message)s')
 
 memory = ConversationBufferMemory()
 
-def rag_search(self, user_message):
-    """Perform a RAG search with the model."""
-    if not self.database_name:
-        self.add_message("Error: No database name provided.", "System")
-        return
-
-    url = f"http://localhost:9200/{self.database_name}/_search"
+def retrieve_document(database_name, user_message):
+    """Retrieve document from OpenSearch."""
+    url = f"http://localhost:9200/{database_name}/_search"
     payload = {
         "_source": {
             "excludes": ["passage_embedding"]
@@ -34,70 +34,56 @@ def rag_search(self, user_message):
         results = response.json()
         hits = results.get("hits", {}).get("hits", [])
         if hits:
-            for hit in hits:
-                text = hit["_source"].get("text", "No text found.")
-                # Send the retrieved document to the model for context inference
-                send_document_to_model(self, user_message, text)
+            return hits[0]["_source"].get("text", "No text found.")
         else:
-            self.add_message("No results found.", "System")
+            return None
     except requests.exceptions.RequestException as e:
-        self.add_message(f"Error: Unable to contact the database. {str(e)}", "System")
+        logging.error(f"Error: Unable to contact the database. {str(e)}")
+        return None
     except Exception as e:
-        self.add_message(f"Error: {str(e)}", "System")
+        logging.error(f"Error: {str(e)}")
+        return None
 
-def send_document_to_model(self, user_message, document_text):
-    """Send the retrieved document to the model for context inference."""
-    # Initialize LLM
-    llm = Ollama(model="llama3")
-
-    # Add the user's message and document text to the LangChain memory
+def rag_inference(user_message, document_text):
+    """Stream response from the model using LangChain after receiving document context."""
+    llm = Ollama(
+        model="llama3",
+        callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
+        verbose=True,
+    )
     memory.chat_memory.add_user_message(user_message)
     memory.chat_memory.add_user_message(document_text)
 
-    response_bubble = self.add_message("", "Model")
+    template = """
+    You are LAISA (Local AI Search Application), a desktop chatbot assistant.
+
+    Answer the following question considering the provided document context:
+
+    Document Context: {document_context}
+
+    User question: {user_question}
+    """
 
     try:
-        prompt_template = """
-        You are a helpful assistant. Answer the following question considering the provided document context:
-
-        Document Context: {document_context}
-
-        User question: {user_question}
-        """
-        prompt = ChatPromptTemplate.from_template(prompt_template)
+        prompt = ChatPromptTemplate.from_template(template)
         chain = prompt | llm
 
-        formatted_prompt = {
+        response_stream = chain.stream({
             "document_context": document_text,
             "user_question": user_message,
-        }
-
-        response_stream = chain.stream(formatted_prompt)
+        })
 
         partial_response = ""
-        time.sleep(2)  # Add delay before starting to process chunks
+        time.sleep(2)
 
         for response_chunk in response_stream:
-            if self.stop_processing_flag:
-                print("Processing stopped by user.")
-                break
-
             partial_response += response_chunk
-            print(f"Chunk: {response_chunk}")  # Debug print to trace responses
+            logging.debug(f"Chunk received: {response_chunk.strip()}")
+            yield f"data: {response_chunk}@@END_CHUNK\n\n"
+            time.sleep(0.1)
 
-            for label in response_bubble.winfo_children():
-                if isinstance(label, tk.Label):
-                    label.config(text=partial_response)
-
-            self.chat_canvas.update_idletasks()
-            if not self.user_scrolled_up:
-                self.chat_canvas.yview_moveto(1.0)
-            self.root.update_idletasks()
-            self.root.update()
-
-        # Add the model's response to the LangChain memory
         memory.chat_memory.add_ai_message(partial_response)
-        print("Full Response:", partial_response)  # Debug print to trace full response
 
     except Exception as e:
-        self.add_message(f"Error: {str(e)}", "System")
+        yield f"data: {{'error': '{str(e)}'}}\n\n"
+        logging.error(f"Error: {str(e)}")

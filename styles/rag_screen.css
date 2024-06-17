@@ -1,0 +1,77 @@
+/* rag_screen.css */
+
+.container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    height: 100vh;
+    background: linear-gradient(135deg, #1c1c1c, #0d0d0d);
+}
+
+.input-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.input-container input {
+    margin: 5px;
+    padding: 10px;
+    width: 300px;
+    border-radius: 5px;
+    border: 1px solid #333;
+    background: #222;
+    color: #fff;
+    font-size: 16px;
+}
+
+.input-container button {
+    padding: 10px 20px;
+    background: #00ff00;
+    color: #000;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 10px;
+}
+
+.input-container button:hover {
+    background: #00cc00;
+}
+
+.messages {
+    width: 80%;
+    max-height: 50vh;
+    overflow-y: auto;
+    background: #2c2c2c;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+}
+
+.message {
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    color: #fff;
+    font-family: 'Orbitron', sans-serif;
+}
+
+.user-message {
+    background: #4caf50;
+    align-self: flex-end;
+}
+
+.llm-message {
+    background: #1e88e5;
+    align-self: flex-start;
+}
+
+.system-message {
+    background: #f44336;
+    align-self: center;
+}

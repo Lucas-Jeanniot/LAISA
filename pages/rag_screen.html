@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>RAG Search</title>
+    <link rel="stylesheet" type="text/css" href="../styles/styles.css">
+    <link rel="stylesheet" type="text/css" href="../styles/rag_screen.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="banner-content">
+            <button class="home-button" onclick="window.location.href='index.html'">Home</button>
+            <h1>LAISA - RAG Search</h1>
+            <img src="../assets/banner_icon.png" alt="Banner Icon">
+        </div>
+    </header>
+    <div class="container">
+        <div class="input-container">
+            <input type="text" id="databaseNameInput" placeholder="Enter Database Name">
+            <input type="text" id="messageInput" placeholder="Enter your message">
+            <button id="sendButton">Search</button>
+        </div>
+        <div id="messages" class="messages">
+            <!-- Messages will appear here -->
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('sendButton').addEventListener('click', sendRAGMessage);
+
+        function appendMessage(sender, text, className) {
+            const messages = document.getElementById('messages');
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${className}`;
+            messageElement.innerHTML = `<strong>${sender}:</strong> <span>${text}</span>`;
+            messages.appendChild(messageElement);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        async function sendRAGMessage() {
+            const databaseName = document.getElementById('databaseNameInput').value.trim();
+            const userMessage = document.getElementById('messageInput').value.trim();
+
+            if (databaseName && userMessage) {
+                appendMessage('You', userMessage, 'user-message');
+                document.getElementById('messageInput').value = '';
+
+                try {
+                    const response = await fetch('http://localhost:5001/api/rag_search', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ database_name: databaseName, message: userMessage })
+                    });
+
+                    if (response.ok) {
+                        const eventSource = new EventSource(`http://localhost:5001/api/rag_search?database_name=${encodeURIComponent(databaseName)}&message=${encodeURIComponent(userMessage)}`);
+                        const responseBubble = appendMessage('Model', '', 'llm-message');
+                        let buffer = '';
+
+                        eventSource.onmessage = function(event) {
+                            const chunk = event.data.replace('@@END_CHUNK', '');
+                            console.log('Received chunk:', chunk); // Debug log
+                            buffer += chunk;
+
+                            updateMessage(responseBubble, buffer);
+                        };
+
+                        eventSource.onerror = function() {
+                            console.error('EventSource failed'); // Debug log
+                            eventSource.close();
+                        };
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            }
+        }
+
+        function updateMessage(element, text) {
+            const span = element.querySelector('span');
+            span.innerHTML = text.replace(/\n/g, '<br>');
+            const messages = document.getElementById('messages');
+            messages.scrollTop = messages.scrollHeight;
+        }
+    </script>
+</body>
+</html>
