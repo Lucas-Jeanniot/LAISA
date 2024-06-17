@@ -175,7 +175,10 @@
                 return `<pre>${JSON.stringify(jsonObj, null, 2)}</pre>`;
             } catch (e) {
                 // Replace newlines with <br> and preserve whitespace for paragraphs
-                return text.replace(/\n/g, '<br>').replace(/\s\s+/g, ' ');
+                return text
+                    .replace(/\n/g, '<br>')
+                    .replace(/\s\s+/g, ' ')
+                    .replace(/([:.])\s/g, '$1<br>'); // Add <br> after colons and periods
             }
         }
     </script>
