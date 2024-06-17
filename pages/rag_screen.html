@@ -49,7 +49,7 @@
             const messages = document.getElementById('messages');
             const messageElement = document.createElement('div');
             messageElement.className = `message ${className}`;
-            messageElement.innerHTML = `<strong>${sender}:</strong> <span>${text}</span>`;
+            messageElement.innerHTML = `<strong>${sender}:</strong> <span>${formatResponse(text)}</span>`;
             messages.appendChild(messageElement);
             messages.scrollTop = messages.scrollHeight;
             return messageElement;
@@ -151,19 +151,9 @@
             eventSource.onmessage = function(event) {
                 const chunk = event.data.replace('@@END_CHUNK', '');
                 console.log('Received chunk:', chunk); // Debug log
-                buffer += chunk;
+                buffer += chunk; // Append chunk to buffer
 
-                if (event.data.includes('@@END_CHUNK')) {
-                    updateMessage(responseBubble, buffer);
-
-                    // Save LLM response
-                    documentConversations[documentText].push({
-                        sender: 'Model',
-                        text: buffer,
-                        className: 'llm-message'
-                    });
-                    buffer = '';
-                }
+                updateMessage(responseBubble, buffer);
             };
 
             eventSource.onerror = function() {
@@ -174,10 +164,19 @@
 
         function updateMessage(element, text) {
             const span = element.querySelector('span');
-            // Preserve line breaks and spaces
-            span.innerHTML += text.replace(/<br>/g, '<br>').replace(/\n/g, '<br>');
+            span.innerHTML = formatResponse(text);
             const messages = document.getElementById('messages');
             messages.scrollTop = messages.scrollHeight;
+        }
+
+        function formatResponse(text) {
+            try {
+                const jsonObj = JSON.parse(text);
+                return `<pre>${JSON.stringify(jsonObj, null, 2)}</pre>`;
+            } catch (e) {
+                // Replace newlines with <br> and preserve whitespace for paragraphs
+                return text.replace(/\n/g, '<br>').replace(/\s\s+/g, ' ');
+            }
         }
     </script>
 </body>
