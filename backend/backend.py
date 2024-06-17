@@ -1,7 +1,7 @@
 from flask import Flask, request, Response, jsonify
 from flask_cors import CORS
 from inference import stream_response
-from rag_search import retrieve_document, rag_inference
+from document_retrieval import retrieve_document
 
 app = Flask(__name__)
 CORS(app)
@@ -25,11 +25,8 @@ def rag_search():
     if not database_name or not user_message:
         return jsonify({"response": "Error: Please provide both database name and user message."}), 400
 
-    document_text = retrieve_document(database_name, user_message)
-    if document_text is None:
-        return jsonify({"response": "Error: Document not found."}), 404
-    
-    return Response(rag_inference(user_message, document_text), mimetype='text/event-stream')
+    document = retrieve_document(database_name, user_message)
+    return jsonify(document), 200
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)

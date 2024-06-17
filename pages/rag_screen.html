@@ -16,13 +16,21 @@
         </div>
     </header>
     <div class="container">
-        <div class="input-container">
-            <input type="text" id="databaseNameInput" placeholder="Enter Database Name">
-            <input type="text" id="messageInput" placeholder="Enter your message">
-            <button id="sendButton">Search</button>
+        <div class="sidebar">
+            <h2>Retrieved Documents</h2>
+            <ul id="documentList">
+                <!-- Retrieved documents will be listed here -->
+            </ul>
         </div>
-        <div id="messages" class="messages">
-            <!-- Messages will appear here -->
+        <div class="content-container">
+            <div class="input-container">
+                <input type="text" id="databaseNameInput" placeholder="Enter Database Name">
+                <input type="text" id="messageInput" placeholder="Enter your message">
+                <button id="sendButton">Search</button>
+            </div>
+            <div id="messages" class="messages">
+                <!-- Messages will appear here -->
+            </div>
         </div>
     </div>
 
@@ -36,6 +44,23 @@
             messageElement.innerHTML = `<strong>${sender}:</strong> <span>${text}</span>`;
             messages.appendChild(messageElement);
             messages.scrollTop = messages.scrollHeight;
+        }
+
+        function addDocumentToSidebar(documentText) {
+            const documentList = document.getElementById('documentList');
+            const documentItem = document.createElement('li');
+            documentItem.className = 'document-item';
+            documentItem.textContent = documentText.slice(0, 30) + '...'; // Use the first 30 characters as a preview
+            documentItem.addEventListener('click', () => {
+                loadDocument(documentText);
+            });
+            documentList.appendChild(documentItem);
+        }
+
+        function loadDocument(documentText) {
+            const messages = document.getElementById('messages');
+            messages.innerHTML = ''; // Clear existing messages
+            appendMessage('Document', documentText, 'llm-message');
         }
 
         async function sendRAGMessage() {
@@ -56,34 +81,21 @@
                     });
 
                     if (response.ok) {
-                        const eventSource = new EventSource(`http://localhost:5001/api/rag_search?database_name=${encodeURIComponent(databaseName)}&message=${encodeURIComponent(userMessage)}`);
-                        const responseBubble = appendMessage('Model', '', 'llm-message');
-                        let buffer = '';
-
-                        eventSource.onmessage = function(event) {
-                            const chunk = event.data.replace('@@END_CHUNK', '');
-                            console.log('Received chunk:', chunk); // Debug log
-                            buffer += chunk;
-
-                            updateMessage(responseBubble, buffer);
-                        };
-
-                        eventSource.onerror = function() {
-                            console.error('EventSource failed'); // Debug log
-                            eventSource.close();
-                        };
+                        const result = await response.json();
+                        console.log('Result from server:', result); // Debug log
+                        const documentText = result.text;
+                        console.log('Document Text:', documentText); // Debug log
+                        appendMessage('Document', documentText, 'llm-message');
+                        addDocumentToSidebar(documentText);
+                    } else {
+                        appendMessage('System', 'Error: Unable to retrieve document.', 'system-message');
                     }
                 } catch (error) {
-                    console.error('Error:', error);
+                    appendMessage('System', `Error: ${error.message}`, 'system-message');
                 }
+            } else {
+                appendMessage('System', 'Error: Please enter both database name and message.', 'system-message');
             }
-        }
-
-        function updateMessage(element, text) {
-            const span = element.querySelector('span');
-            span.innerHTML = text.replace(/\n/g, '<br>');
-            const messages = document.getElementById('messages');
-            messages.scrollTop = messages.scrollHeight;
         }
     </script>
 </body>
