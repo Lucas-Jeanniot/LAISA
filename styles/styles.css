@@ -84,6 +84,11 @@ header .home-button:hover {
     flex: 1;
     overflow-y: auto;
     margin-bottom: 10px;
+    background: #2c2c2c;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    box-sizing: border-box;
 }
 
 .input-container {
@@ -120,7 +125,10 @@ header .home-button:hover {
     margin-bottom: 10px;
     padding: 10px;
     border-radius: 5px;
-    max-width: 60%;
+    max-width: 80%; /* Changed from 60% to 80% */
+    word-wrap: break-word;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    display: inline-block;
 }
 
 .user-message {

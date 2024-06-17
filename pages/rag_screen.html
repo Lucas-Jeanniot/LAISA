@@ -40,7 +40,7 @@
 
     <script>
         let selectedDocumentText = '';
-        let documentMessages = {};
+        let documentConversations = {};
 
         document.getElementById('sendButton').addEventListener('click', sendRAGMessage);
         document.getElementById('queryButton').addEventListener('click', submitQuery);
@@ -65,8 +65,8 @@
             });
             documentList.appendChild(documentItem);
 
-            // Initialize message array for this document
-            documentMessages[documentText] = documentMessages[documentText] || [];
+            // Initialize conversation array for this document
+            documentConversations[documentText] = documentConversations[documentText] || [];
         }
 
         function loadDocument(documentText) {
@@ -74,9 +74,9 @@
             const messages = document.getElementById('messages');
             messages.innerHTML = ''; // Clear existing messages
 
-            // Load messages for the selected document
-            documentMessages[documentText].forEach(message => {
-                appendMessage(message.sender, message.text, message.className);
+            // Load conversation for the selected document
+            documentConversations[documentText].forEach(conversation => {
+                appendMessage(conversation.sender, conversation.text, conversation.className);
             });
         }
 
@@ -104,6 +104,14 @@
                         console.log('Document Text:', documentText); // Debug log
                         appendMessage('Document', documentText, 'llm-message');
                         addDocumentToSidebar(documentText);
+
+                        // Save conversation
+                        documentConversations[documentText] = documentConversations[documentText] || [];
+                        documentConversations[documentText].push({
+                            sender: 'Document',
+                            text: documentText,
+                            className: 'llm-message'
+                        });
                     } else {
                         appendMessage('System', 'Error: Unable to retrieve document.', 'system-message');
                     }
@@ -122,8 +130,8 @@
                 appendMessage('You', queryInput, 'user-message');
                 document.getElementById('queryInput').value = '';
 
-                // Save user message
-                documentMessages[selectedDocumentText].push({
+                // Save user query
+                documentConversations[selectedDocumentText].push({
                     sender: 'You',
                     text: queryInput,
                     className: 'user-message'
@@ -147,6 +155,13 @@
 
                 if (event.data.includes('@@END_CHUNK')) {
                     updateMessage(responseBubble, buffer);
+
+                    // Save LLM response
+                    documentConversations[documentText].push({
+                        sender: 'Model',
+                        text: buffer,
+                        className: 'llm-message'
+                    });
                     buffer = '';
                 }
             };
