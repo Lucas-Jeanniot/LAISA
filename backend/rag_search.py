@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.DEBUG, filename='response_log.log', filemode='
 
 memory = ConversationBufferMemory()
 
-def stream_response(user_message, document_text):
+def rag_response(user_message, document_text):
     """Stream response from the model using LangChain."""
     llm = Ollama(
         model="llama3",

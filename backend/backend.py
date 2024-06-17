@@ -1,7 +1,7 @@
 from flask import Flask, request, Response, jsonify
 from flask_cors import CORS
 from inference import stream_response
-from rag_search import stream_response
+from rag_search import rag_response
 from document_retrieval import retrieve_document
 
 app = Flask(__name__)
@@ -36,7 +36,7 @@ def document_query():
     if not document_text or not user_query:
         return jsonify({"response": "Error: Please provide both document text and query."}), 400
 
-    response_generator = stream_response(user_query, document_text)
+    response_generator = rag_response(user_query, document_text)
     return Response(response_generator, mimetype='text/event-stream')
 
 if __name__ == '__main__':

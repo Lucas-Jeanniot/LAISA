@@ -98,3 +98,15 @@
     color: #ffffff;
     align-self: flex-start;
 }
+
+/* Add new pre tag styling for formatted text */
+pre {
+    background: #333;
+    padding: 10px;
+    border-radius: 5px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: 'Roboto', sans-serif;
+    color: #ffffff;
+}

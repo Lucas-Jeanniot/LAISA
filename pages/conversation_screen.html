@@ -103,9 +103,29 @@
         function updateMessage(element, text) {
             const span = element.querySelector('span');
             // Preserve line breaks and spaces
-            span.innerHTML += text.replace(/<br>/g, '<br>').replace(/\n/g, '<br>');
+            span.innerHTML += formatResponse(text);
             const messages = document.getElementById('messages');
             messages.scrollTop = messages.scrollHeight;
+        }
+
+        function formatResponse(text) {
+            try {
+                const jsonObj = JSON.parse(text);
+                return `<pre>${JSON.stringify(jsonObj, null, 2)}</pre>`;
+            } catch (e) {
+                // Basic formatting rules: Replace newlines with <br>, preserve whitespace for paragraphs
+                text = text.replace(/(\r\n|\n|\r)/gm, "<br>");
+                text = text.replace(/\s\s+/g, ' ');
+                // Handle spaces around punctuation
+                text = text.replace(/\s([,.!?;:])/g, '$1'); // Remove space before punctuation
+                text = text.replace(/([,.!?;:])\s/g, '$1 '); // Ensure single space after punctuation
+                text = text.replace(/:\s+/g, ':<br>'); // Add <br> after colons
+                text = text.replace(/\.\s+/g, '.<br>'); // Add <br> after periods
+                // Detect and format bullet points and lists
+                text = text.replace(/(\d+)\.\s*/g, '<br>$1. '); // Format numbered lists
+                text = text.replace(/(\*\s)/g, '<br>&bull; '); // Format bullet points
+                return text;
+            }
         }
     </script>
 </body>
