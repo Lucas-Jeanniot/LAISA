@@ -4,7 +4,7 @@
 body {
     background: linear-gradient(135deg, #0d0d0d, #1c1c1c);
     color: #d3d3d3;
-    font-family: 'Orbitron', sans-serif;
+    font-family: 'Roboto', sans-serif;
     margin: 0;
     padding: 0;
     display: flex;
@@ -55,8 +55,7 @@ header .home-button:hover {
 
 .container {
     display: flex;
-    flex: 1;
-    height: calc(100% - 50px); /* Adjust height to fit within the screen excluding the header */
+    height: calc(100% - 110px); /* Adjust height to fit within the screen excluding the header and query input */
 }
 
 .sidebar {
@@ -73,78 +72,130 @@ header .home-button:hover {
     margin-bottom: 20px;
 }
 
-.chat-container {
-    width: 80%;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 20px;
-    background: #1e1e1e;
-    overflow: hidden;
+.sidebar ul {
+    list-style-type: none;
+    padding: 0;
 }
 
-.messages {
-    flex: 1;
-    overflow-y: auto;
+.document-item {
+    background: #333;
+    color: #fff;
+    padding: 10px;
     margin-bottom: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.document-item:hover {
+    background: #444;
+}
+
+.chat-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    overflow-y: auto;
+    background: #1e1e1e;
 }
 
 .input-container,
 .upload-container {
     display: flex;
+    flex-direction: row;
     align-items: center;
-    margin-top: 10px;
+    margin-bottom: 20px;
+    width: 100%; /* Full width */
+    justify-content: space-between;
 }
 
 .input-container input,
 .upload-container input[type="file"] {
-    flex: 1;
+    margin: 5px;
     padding: 10px;
-    border: none;
+    width: 45%; /* Less width to make it smaller */
     border-radius: 5px;
-    margin-right: 10px;
-    background: #3a3a3a;
-    color: #ffffff;
+    border: 1px solid #333;
+    background: #222;
+    color: #fff;
+    font-size: 16px;
+    box-sizing: border-box;
 }
-.fileInput,
+
 .input-container button,
-.upload-container button {
-    background: #00ff00;
-    color: #000000;
-    border: none;
+.upload-container button,
+.upload-container label {
     padding: 10px 20px;
-    cursor: pointer;
+    background: #00ff00;
+    color: #000;
+    border: none;
     border-radius: 5px;
-    transition: background 0.3s ease;
+    cursor: pointer;
+    font-size: 16px;
+    text-align: center;
 }
 
 .input-container button:hover,
-.upload-container button:hover {
+.upload-container button:hover,
+.upload-container label:hover {
     background: #00cc00;
 }
 
-/* Message styles */
+.upload-container input[type="file"] {
+    display: none;
+}
+
+.messages {
+    width: 100%;
+    max-height: 60vh; /* Increased height for the messages box */
+    overflow-y: auto;
+    background: #2c2c2c;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
 .message {
-    margin-bottom: 10px;
-    padding: 10px;
-    border-radius: 5px;
-    max-width: 60%;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 10px;
+    color: #fff;
+    font-family: 'Roboto', sans-serif;
+    word-wrap: break-word;
+    max-width: 90%; /* Changed from 60% to 90% */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    display: inline-block;
 }
 
 .user-message {
     background: #4caf50;
-    color: #ffffff;
     align-self: flex-end;
 }
 
 .llm-message {
     background: #1e88e5;
-    color: #ffffff;
     align-self: flex-start;
 }
 
 .system-message {
     background: #f44336;
-    color: #ffffff;
     align-self: center;
+}
+
+pre {
+    background: #333;
+    padding: 10px;
+    border-radius: 5px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-family: 'Roboto', sans-serif;
+    color: #ffffff;
 }

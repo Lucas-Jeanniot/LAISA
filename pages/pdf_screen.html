@@ -18,7 +18,9 @@
     <div class="container">
         <div class="sidebar">
             <h2>Documents</h2>
-            <!-- Placeholder for future document list items -->
+            <ul id="documentList">
+                <!-- Uploaded documents will be listed here -->
+            </ul>
         </div>
         <div class="chat-container">
             <div id="messages" class="messages">
@@ -29,6 +31,7 @@
                 <button id="sendQueryButton">Send Query</button>
             </div>
             <div class="upload-container">
+                <label for="fileInput" id="fileLabel">Choose File</label>
                 <input type="file" id="fileInput" accept=".pdf">
                 <button id="uploadButton">Upload Document</button>
             </div>
@@ -44,17 +47,31 @@
         });
         document.getElementById('uploadButton').addEventListener('click', uploadDocument);
 
-        let documentText = '';
+        let selectedDocumentText = '';
+        let documents = {};
+
+        window.onload = function() {
+            fetch('http://localhost:5001/api/documents')
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(filename => {
+                        addDocumentToSidebar(filename);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching documents:', error);
+                });
+        };
 
         function sendQuery() {
             const queryInput = document.getElementById('queryInput');
             const query = queryInput.value.trim();
-            if (query && documentText) {
+            if (query && selectedDocumentText) {
                 appendMessage('You', query, 'user-message');
                 queryInput.value = '';
-                initiateQueryStreaming(query, documentText);
+                initiateQueryStreaming(query, selectedDocumentText);
             } else {
-                appendMessage('System', 'Please upload a document first.', 'system-message');
+                appendMessage('System', 'Please select a document first.', 'system-message');
             }
         }
 
@@ -77,13 +94,38 @@
                 .then(data => {
                     console.log('File uploaded successfully:', data);
                     appendMessage('System', 'Document uploaded successfully.', 'system-message');
-                    documentText = data.document_text;
+                    addDocumentToSidebar(data.filename);
+                    documents[data.filename] = data.document_text;
                 })
                 .catch(error => {
                     console.error('Error uploading document:', error);
                     appendMessage('System', `Error: ${error.message}`, 'system-message');
                 });
             }
+        }
+
+        function addDocumentToSidebar(filename) {
+            const documentList = document.getElementById('documentList');
+            const documentItem = document.createElement('li');
+            documentItem.className = 'document-item';
+            documentItem.textContent = filename;
+            documentItem.addEventListener('click', () => {
+                fetchDocumentText(filename);
+            });
+            documentList.appendChild(documentItem);
+        }
+
+        function fetchDocumentText(filename) {
+            fetch(`http://localhost:5001/api/document/${filename}`)
+                .then(response => response.json())
+                .then(data => {
+                    selectedDocumentText = data.document_text;
+                    appendMessage('System', `Document "${filename}" loaded.`, 'system-message');
+                })
+                .catch(error => {
+                    console.error('Error fetching document text:', error);
+                    appendMessage('System', `Error: ${error.message}`, 'system-message');
+                });
         }
 
         function appendMessage(sender, text, className) {
@@ -97,7 +139,7 @@
         }
 
         function initiateQueryStreaming(query, documentText) {
-            const eventSource = new EventSource(`http://localhost:5001/api/query?query=${encodeURIComponent(query)}&document_text=${encodeURIComponent(documentText)}`);
+            const eventSource = new EventSource(`http://localhost:5001/api/pdf_query?query=${encodeURIComponent(query)}&document_text=${encodeURIComponent(documentText)}`);
             const responseBubble = appendMessage('Model', '', 'llm-message');
             let buffer = '';
 

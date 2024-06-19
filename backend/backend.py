@@ -7,14 +7,15 @@ from rag_search import rag_response
 from document_retrieval import retrieve_document
 from pdf_understanding import extract_text_from_pdf, infer_context_from_pdf
 
+UPLOAD_FOLDER = 'uploads'
+ALLOWED_EXTENSIONS = {'pdf'}
+
 app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 CORS(app)
 
-UPLOAD_FOLDER = 'uploads/'
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/api/message', methods=['POST'])
 def message():
@@ -55,25 +56,36 @@ def upload_file():
     file = request.files['file']
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
-    if file:
+    if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        file.save(file_path)
-        document_text = extract_text_from_pdf(file_path)
-        return jsonify({"message": "File uploaded successfully", "document_text": document_text}), 200
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        document_text = extract_text_from_pdf(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        return jsonify({"message": "File uploaded successfully", "document_text": document_text, "filename": filename}), 200
+    return jsonify({"error": "Invalid file type"}), 400
 
-@app.route('/api/query', methods=['GET'])
-def query():
+@app.route('/api/documents', methods=['GET'])
+def list_documents():
+    files = [f for f in os.listdir(app.config['UPLOAD_FOLDER']) if allowed_file(f)]
+    return jsonify(files), 200
+
+@app.route('/api/document/<filename>', methods=['GET'])
+def get_document(filename):
+    if allowed_file(filename):
+        document_text = extract_text_from_pdf(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        return jsonify({"document_text": document_text}), 200
+    return jsonify({"error": "Invalid file type"}), 400
+
+@app.route('/api/pdf_query', methods=['GET'])
+def pdf_query():
     user_message = request.args.get('query')
     document_text = request.args.get('document_text')
     if not user_message or not document_text:
-        return jsonify({"error": "Please provide both user query and document text"}), 400
+        return jsonify({"response": "Error: Please provide both user message and document text."}), 400
 
-    def generate():
-        for chunk in infer_context_from_pdf(document_text, user_message):
-            yield chunk
-
-    return Response(generate(), mimetype='text/event-stream')
+    response_generator = infer_context_from_pdf(document_text, user_message)
+    return Response(response_generator, mimetype='text/event-stream')
 
 if __name__ == '__main__':
+    if not os.path.exists(UPLOAD_FOLDER):
+        os.makedirs(UPLOAD_FOLDER)
     app.run(debug=True, port=5001)
