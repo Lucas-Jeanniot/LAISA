@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>PDF Query</title>
+    <link rel="stylesheet" type="text/css" href="../styles/styles.css">
+    <link rel="stylesheet" type="text/css" href="../styles/pdf_screen.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="banner-content">
+            <button class="home-button" onclick="window.location.href='index.html'">Home</button>
+            <h1>LAISA - PDF Query</h1>
+            <img src="../assets/banner_icon.png" alt="Banner Icon">
+        </div>
+    </header>
+    <div class="container">
+        <div class="sidebar">
+            <h2>Documents</h2>
+            <!-- Placeholder for future document list items -->
+        </div>
+        <div class="chat-container">
+            <div id="messages" class="messages">
+                <!-- Messages will appear here -->
+            </div>
+            <div class="input-container">
+                <input type="text" id="queryInput" placeholder="Type your query here...">
+                <button id="sendQueryButton">Send Query</button>
+            </div>
+            <div class="upload-container">
+                <input type="file" id="fileInput" accept=".pdf">
+                <button id="uploadButton">Upload Document</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('sendQueryButton').addEventListener('click', sendQuery);
+        document.getElementById('queryInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                sendQuery();
+            }
+        });
+        document.getElementById('uploadButton').addEventListener('click', uploadDocument);
+
+        let documentText = '';
+
+        function sendQuery() {
+            const queryInput = document.getElementById('queryInput');
+            const query = queryInput.value.trim();
+            if (query && documentText) {
+                appendMessage('You', query, 'user-message');
+                queryInput.value = '';
+                initiateQueryStreaming(query, documentText);
+            } else {
+                appendMessage('System', 'Please upload a document first.', 'system-message');
+            }
+        }
+
+        function uploadDocument() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            if (file) {
+                const formData = new FormData();
+                formData.append('file', file);
+                fetch('http://localhost:5001/api/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('File uploaded successfully:', data);
+                    appendMessage('System', 'Document uploaded successfully.', 'system-message');
+                    documentText = data.document_text;
+                })
+                .catch(error => {
+                    console.error('Error uploading document:', error);
+                    appendMessage('System', `Error: ${error.message}`, 'system-message');
+                });
+            }
+        }
+
+        function appendMessage(sender, text, className) {
+            const messages = document.getElementById('messages');
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${className}`;
+            messageElement.innerHTML = `<strong>${sender}:</strong> <span>${text}</span>`;
+            messages.appendChild(messageElement);
+            messages.scrollTop = messages.scrollHeight;
+            return messageElement;
+        }
+
+        function initiateQueryStreaming(query, documentText) {
+            const eventSource = new EventSource(`http://localhost:5001/api/query?query=${encodeURIComponent(query)}&document_text=${encodeURIComponent(documentText)}`);
+            const responseBubble = appendMessage('Model', '', 'llm-message');
+            let buffer = '';
+
+            eventSource.onmessage = function(event) {
+                const chunk = event.data.replace('@@END_CHUNK', '');
+                console.log('Received chunk:', chunk); // Debug log
+                buffer += chunk;
+
+                if (event.data.includes('@@END_CHUNK')) {
+                    updateMessage(responseBubble, buffer);
+                    buffer = '';
+                }
+            };
+
+            eventSource.onerror = function() {
+                console.error('EventSource failed'); // Debug log
+                eventSource.close();
+            };
+        }
+
+        function updateMessage(element, text) {
+            const span = element.querySelector('span');
+            // Preserve line breaks and spaces
+            span.innerHTML += text.replace(/:/g, ':<br>').replace(/\./g, '.<br>');
+            const messages = document.getElementById('messages');
+            messages.scrollTop = messages.scrollHeight;
+        }
+    </script>
+</body>
+</html>

@@ -1,7 +1,10 @@
+/* pdf_screen.css */
+
+/* Body and container styling */
 body {
     background: linear-gradient(135deg, #0d0d0d, #1c1c1c);
     color: #d3d3d3;
-    font-family: 'Roboto', sans-serif;
+    font-family: 'Orbitron', sans-serif;
     margin: 0;
     padding: 0;
     display: flex;
@@ -84,19 +87,17 @@ header .home-button:hover {
     flex: 1;
     overflow-y: auto;
     margin-bottom: 10px;
-    background: #2c2c2c;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
-    box-sizing: border-box;
 }
 
-.input-container {
+.input-container,
+.upload-container {
     display: flex;
     align-items: center;
+    margin-top: 10px;
 }
 
-.input-container input {
+.input-container input,
+.upload-container input[type="file"] {
     flex: 1;
     padding: 10px;
     border: none;
@@ -105,8 +106,9 @@ header .home-button:hover {
     background: #3a3a3a;
     color: #ffffff;
 }
-
-.input-container button {
+.fileInput,
+.input-container button,
+.upload-container button {
     background: #00ff00;
     color: #000000;
     border: none;
@@ -116,7 +118,8 @@ header .home-button:hover {
     transition: background 0.3s ease;
 }
 
-.input-container button:hover {
+.input-container button:hover,
+.upload-container button:hover {
     background: #00cc00;
 }
 
@@ -125,10 +128,7 @@ header .home-button:hover {
     margin-bottom: 10px;
     padding: 10px;
     border-radius: 5px;
-    max-width: 80%; /* Changed from 60% to 80% */
-    word-wrap: break-word;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    display: inline-block;
+    max-width: 60%;
 }
 
 .user-message {
@@ -141,4 +141,10 @@ header .home-button:hover {
     background: #1e88e5;
     color: #ffffff;
     align-self: flex-start;
+}
+
+.system-message {
+    background: #f44336;
+    color: #ffffff;
+    align-self: center;
 }

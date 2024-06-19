@@ -1,8 +1,14 @@
 import PyPDF2
+import time
+import logging
 from langchain_community.llms import Ollama
 from langchain.prompts import ChatPromptTemplate
 from langchain.memory import ConversationBufferMemory
-import time
+from langchain.callbacks.manager import CallbackManager
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+
+# Setup logging
+logging.basicConfig(level=logging.DEBUG, filename='response_log.log', filemode='a', format='%(asctime)s - %(message)s')
 
 memory = ConversationBufferMemory()
 
@@ -23,7 +29,11 @@ def infer_context_from_pdf(pdf_text, user_message):
     if not pdf_text:
         return {"error": "No text extracted from PDF."}
 
-    llm = Ollama(model="llama3")
+    llm = Ollama(
+        model="llama3",
+        callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
+        verbose=True,
+    )
 
     prompt_template = """
     You are a helpful assistant. Answer the following question considering the provided document context:
@@ -47,6 +57,8 @@ def infer_context_from_pdf(pdf_text, user_message):
 
     for response_chunk in response_stream:
         partial_response += response_chunk
+        logging.debug(f"Chunk received: {response_chunk.strip()}")
+        yield f"data: {response_chunk}@@END_CHUNK\n\n"
+        time.sleep(0.1)
 
     memory.chat_memory.add_ai_message(partial_response)
-    return {"response": partial_response}
