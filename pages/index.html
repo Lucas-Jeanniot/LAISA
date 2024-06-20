@@ -11,21 +11,68 @@
         <div class="banner-content">
             <h1>LAISA</h1>
             <img src="../assets/banner_icon.png" alt="Banner Icon">
+            <div class="dropdown">
+                <button class="dropbtn" onclick="toggleDropdown()">Select Model</button>
+                <div class="dropdown-content" id="dropdownContent">
+                    <a href="#" onclick="selectModel('llama3')">Llama 3</a>
+                    <a href="#" onclick="selectModel('mistral')">Mistral</a>
+                    <a href="#" onclick="selectModel('gemma:2b')">Gemma 2B</a>
+                </div>
+            </div>
+            <span id="currentModel">Current Model: Llama 3</span>
         </div>
     </header>
     <div id="startupScreen">
-        <div class="square" onclick="location.href='conversation_screen.html'">
+        <div class="square" onclick="navigateToPage('conversation_screen.html')">
             <img src="../assets/conversation_icon.png" alt="Conversation Icon">
             <span>Conversation</span>
         </div>
-        <div class="square" onclick="location.href='pdf_screen.html'">
+        <div class="square" onclick="navigateToPage('pdf_screen.html')">
             <img src="../assets/document_icon.png" alt="Document Icon">
             <span>Document Insight</span>
         </div>
-        <div class="square" onclick="location.href='rag_screen.html'">
+        <div class="square" onclick="navigateToPage('rag_screen.html')">
             <img src="../assets/rag_icon.png" alt="RAG Icon">
             <span>RAG</span>
         </div>
     </div>
+
+    <script>
+        let currentModel = localStorage.getItem('selectedModel') || 'llama3';
+
+        document.getElementById('currentModel').innerText = `Current Model: ${currentModel}`;
+
+        function selectModel(model) {
+            currentModel = model;
+            localStorage.setItem('selectedModel', model);
+            document.getElementById('currentModel').innerText = `Current Model: ${model}`;
+            console.log(`Model selected: ${model}`);
+            closeDropdown();
+        }
+
+        function toggleDropdown() {
+            document.getElementById("dropdownContent").classList.toggle("show");
+        }
+
+        function closeDropdown() {
+            document.getElementById("dropdownContent").classList.remove("show");
+        }
+
+        function navigateToPage(page) {
+            window.location.href = `${page}?model=${currentModel}`;
+        }
+
+        window.onclick = function(event) {
+            if (!event.target.matches('.dropbtn')) {
+                var dropdowns = document.getElementsByClassName("dropdown-content");
+                for (var i = 0; i < dropdowns.length; i++) {
+                    var openDropdown = dropdowns[i];
+                    if (openDropdown.classList.contains('show')) {
+                        openDropdown.classList.remove('show');
+                    }
+                }
+            }
+        }
+    </script>
 </body>
 </html>

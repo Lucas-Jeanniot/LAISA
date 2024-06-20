@@ -5,7 +5,6 @@
     <title>PDF Query</title>
     <link rel="stylesheet" type="text/css" href="../styles/styles.css">
     <link rel="stylesheet" type="text/css" href="../styles/pdf_screen.css">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500&display=swap" rel="stylesheet">
 </head>
 <body>
     <header>
@@ -146,12 +145,9 @@
             eventSource.onmessage = function(event) {
                 const chunk = event.data.replace('@@END_CHUNK', '');
                 console.log('Received chunk:', chunk); // Debug log
-                buffer += chunk;
+                buffer += chunk + " ";  // Add space to avoid word concatenation
 
-                if (event.data.includes('@@END_CHUNK')) {
-                    updateMessage(responseBubble, buffer);
-                    buffer = '';
-                }
+                updateMessage(responseBubble, buffer);
             };
 
             eventSource.onerror = function() {
@@ -163,7 +159,11 @@
         function updateMessage(element, text) {
             const span = element.querySelector('span');
             // Preserve line breaks and spaces
-            span.innerHTML += text.replace(/:/g, ':<br>').replace(/\./g, '.<br>');
+            span.innerHTML = text
+                .replace(/:\s*/g, ':<br>')
+                .replace(/\.\s*/g, '.<br>')
+                .replace(/,\s*/g, ',<br>')
+                .replace(/\n/g, '<br>');
             const messages = document.getElementById('messages');
             messages.scrollTop = messages.scrollHeight;
         }

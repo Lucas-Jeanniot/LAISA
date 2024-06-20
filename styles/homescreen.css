@@ -74,3 +74,53 @@
 .square:hover span {
     transform: translateY(-5px);
 }
+
+/* Dropdown styling */
+.dropdown {
+    position: relative;
+    display: inline-block;
+    margin-left: 20px;
+}
+
+.dropbtn {
+    background-color: #00ff00;
+    color: black;
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background 0.3s ease;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #2b2b2b;
+    min-width: 160px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    z-index: 1;
+    border-radius: 5px;
+}
+
+.dropdown-content a {
+    color: #d3d3d3;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+.dropdown-content a:hover {
+    background-color: #3a3a3a;
+}
+
+.show {
+    display: block;
+}
+
+#currentModel {
+    margin-left: 20px;
+    font-size: 16px;
+    color: #ffffff;
+    font-weight: bold;
+}

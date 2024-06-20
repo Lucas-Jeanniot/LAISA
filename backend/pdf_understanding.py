@@ -24,14 +24,14 @@ def extract_text_from_pdf(pdf_path):
         print(f"Error extracting text from PDF: {e}")
     return pdf_text
 
-def infer_context_from_pdf(pdf_text, user_message):
+def infer_context_from_pdf(pdf_text, user_message, model):
     """Infer context from the extracted PDF text using the LLM with streaming."""
     if not pdf_text:
         yield "data: {\"error\": \"No text extracted from PDF.\"}@@END_CHUNK\n\n"
         return
 
     llm = Ollama(
-        model="llama3",
+        model=model,
         callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
         verbose=True,
     )
@@ -57,11 +57,12 @@ def infer_context_from_pdf(pdf_text, user_message):
         time.sleep(2)
 
         for response_chunk in response_stream:
-            partial_response += response_chunk
-            logging.debug(f"Chunk received: {response_chunk.strip()}")
-            yield f"data: {response_chunk}@@END_CHUNK\n\n"
-            time.sleep(0.1)
-
+            response_chunk = response_chunk.strip()  # Strip whitespace to avoid duplication
+            if response_chunk:
+                partial_response += response_chunk + " "  # Add space to avoid word concatenation
+                logging.debug(f"Chunk received: {response_chunk}")
+                yield f"data: {response_chunk}@@END_CHUNK\n\n"
+                time.sleep(0.1)
 
         memory.chat_memory.add_ai_message(partial_response)
 
